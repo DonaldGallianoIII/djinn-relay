@@ -1,0 +1,8 @@
+{
+  "name": "djinn",
+  "version": "2.0.0",
+  "description": "Three-phase orchestrated code review relay: audit → deliberate → dispatch. Multi-agent Opus audits produce a timestamped report folder (audits/YYYY-MM-DD-HHmm-scope/). Human + orchestrator deliberate, then focused Opus fixers execute one brief at a time with work-set guards. Auto Round 2 verification on combined diff.",
+  "author": { "name": "Donald Galliano III" },
+  "keywords": ["code-review", "multi-agent", "relay", "adversarial", "quality", "orchestration", "fix-dispatch"],
+  "repository": "https://github.com/donaldgallianoiii/GameEngine"
+}

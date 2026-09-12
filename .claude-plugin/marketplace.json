@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "djinn-relay",
+  "description": "Donald Galliano's multi-agent code review relay: audit, deliberate, dispatch.",
+  "owner": { "name": "Donald Galliano III" },
+  "plugins": [
+    {
+      "name": "djinn",
+      "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder and a ledger line.",
+      "author": { "name": "Donald Galliano III" },
+      "category": "quality",
+      "source": "./plugins/djinn"
+    }
+  ]
+}
