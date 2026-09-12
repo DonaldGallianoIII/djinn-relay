@@ -106,7 +106,9 @@ caller, an import, a subscriber, or a config the changed code reads. Every
 such file goes under "## Files read outside the fence" with a reason in
 five words or fewer. A finding on a file outside the fence goes under
 "## Blast radius". Do not report pre-existing problems in unchanged files
-as findings.
+as findings. Do not list the audit folder, CONTRACTS.md, your own agent
+definition, the project config, the conventions files, or the known-bugs
+index as outside-fence reads; those were handed to you.
 
 Project config:
   conventions_files: <list>. Read these before reviewing.

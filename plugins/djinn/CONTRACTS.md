@@ -116,6 +116,12 @@ The dependency walk is bounded: one hop out from a changed file, in either
 direction (what it imports, what imports it). Going further requires a
 reason on the outside-fence line.
 
+Not counted as outside-fence reads, so never listed: the audit folder
+itself (`fence.txt`, `input-diff.patch`, other reports), the plugin's own
+files (`CONTRACTS.md`, the agent's definition), the project config, the
+files named in `conventions_files`, and the known-bugs index. Those are
+inputs the orchestrator handed the agent, not code it went looking for.
+
 ## 5. Per-project config
 
 Each project carries `.djinn/config.yaml`. The commands read it; agents
