@@ -195,13 +195,19 @@ If it replied but the file is missing, write its returned text there
 yourself with the attribution header. Do not apply its suggestions to the
 index; the user reviews and decides.
 
-## Step 9: Ledger (always, even on early stop)
+## Step 9: Usage table and ledger (always, even on early stop)
 
-Append exactly one line to `audits/LEDGER.md`. Create the file with the
-header row from CONTRACTS.md section 6 if it is missing. Format:
+**Usage.** Every agent completion arrives with a usage block (tokens, tool
+uses, duration). Write `<AUDIT_DIR>/usage.md` with the attribution header
+and the table from CONTRACTS.md section 6: one row per agent spawned in
+this run, the wave it ran in, and a total row. If an agent returned no
+usage block, write `?` in its cells.
+
+**Ledger.** Append exactly one line to `audits/LEDGER.md`. Create the file
+with the header row from CONTRACTS.md section 6 if it is missing. Format:
 
 ```
-| <YYYY-MM-DD HH:MM> | review <scope> | <AUDIT_DIR or none> | base=<base_branch>@<merge-base short sha> files=<n> | <verdict> (<scope> scope; <agents not run> not run) | H<n> M<n> L<n> D<n> R<n> failed=<list or none> outside-fence=<n> |
+| <YYYY-MM-DD HH:MM> | review <scope> | <AUDIT_DIR or none> | base=<base_branch>@<merge-base short sha> files=<n> | <verdict> (<scope> scope; <agents not run> not run) | H<n> M<n> L<n> D<n> R<n> failed=<list or none> outside-fence=<n> tokens=<total or ?> |
 ```
 
 Verdict is one of SHIP, FIX THEN SHIP, ESCALATE, IDEAS, NO-CHANGES, or

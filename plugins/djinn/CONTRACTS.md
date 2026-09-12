@@ -169,6 +169,21 @@ Lines, pipe separated, no line breaks:
 A landed fix is not landed until `fixes/<id>-report.md` exists on disk.
 Dispatch writes that file before it writes the ledger line.
 
+**Usage table.** Review and dispatch also write `<AUDIT_DIR>/usage.md`
+(dispatch appends to it) from the usage block the harness returns with
+each agent's completion: one row per agent with tokens, tool uses, and
+duration, and a total. The ledger counts column ends with
+`tokens=<total>`. The harness figure is a summary; the exact four-way
+split (input, output, cache read, cache write) comes from the transcript
+and is what the token tracker reports.
+
+```
+| agent | model | tokens | tool uses | duration | wave |
+|-------|-------|--------|-----------|----------|------|
+| bugs-reviewer | opus | 61636 | 14 | 2m03s | 1 |
+| total |  | 412500 | 96 | 9m40s |  |
+```
+
 ## 7. Attribution header
 
 Any file an agent or command writes into the repo starts with:

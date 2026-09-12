@@ -224,15 +224,21 @@ After all batches land:
    If it replied but the file is missing, write its returned text there
    yourself with the attribution header. Do not apply it to the index.
 
-## Step 8: Ledger line (always, including halts)
+## Step 8: Usage table and ledger line (always, including halts)
 
-Append exactly one line to `audits/LEDGER.md` (create with the header row
-from CONTRACTS.md section 6 if missing). Write it on every exit: complete,
-halted on blocker, halted on build failure, halted on cycle, aborted after
-the plan, max rounds reached.
+**Usage.** Append to `<audit-folder>/usage.md` (create it with the
+attribution header if missing) a section `## dispatch <YYYY-MM-DD HH:MM>`
+holding the table from CONTRACTS.md section 6: one row per fixer (wave =
+batch number) and one per round-<n> reviewer (wave = `round-<n>`), plus a
+total row. `?` where a completion carried no usage block.
+
+**Ledger.** Append exactly one line to `audits/LEDGER.md` (create with the
+header row from CONTRACTS.md section 6 if missing). Write it on every
+exit: complete, halted on blocker, halted on build failure, halted on
+cycle, aborted after the plan, max rounds reached.
 
 ```
-| <YYYY-MM-DD HH:MM> | dispatch | <audit-folder> | briefs=<ids> | landed <n> / blocked <n> / skipped <n> <COMPLETE or HALTED batch <k>: <reason>> | round-<n>=<verdict or not run> H<n> M<n> L<n> D<n> R<n> |
+| <YYYY-MM-DD HH:MM> | dispatch | <audit-folder> | briefs=<ids> | landed <n> / blocked <n> / skipped <n> <COMPLETE or HALTED batch <k>: <reason>> | round-<n>=<verdict or not run> H<n> M<n> L<n> D<n> R<n> tokens=<total or ?> |
 ```
 
 Every landed brief has its `fixes/<id>-report.md` on disk before this
