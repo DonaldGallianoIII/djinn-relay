@@ -1,103 +1,156 @@
 ---
 name: brief
-description: Generate a fix brief skeleton from an audit finding. Usage - /djinn:brief <audit-folder> <finding-id> where audit-folder is like audits/2026-04-20-1530-standard and finding-id matches an entry in the synthesis (e.g. HIGH-1, MEDIUM-3). Creates audits/<folder>/fixes/<id>-<slug>.md pre-filled from the finding. Human + orchestrator fill in WHY (deliberation context) and confirm work_set before dispatching.
+description: Generate a fix brief skeleton from a synthesis finding. Usage - /djinn:brief <audit-folder> <finding-id> where finding-id is a synthesis id like HIGH-1 or MEDIUM-3. Creates <audit-folder>/fixes/<id>-<slug>.md pre-filled from the finding. The human and the orchestrator fill in WHY and confirm work_set before dispatching.
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Djinn Fix Brief Generator
 
-You are creating a fix brief skeleton for a specific audit finding so it can be dispatched to a fixer.
+You are creating a fix brief (a one-page contract for a single fix) so it
+can be dispatched to a fixer (the agent that edits code). The orchestrator
+is the main Claude session running this command.
+
+Read `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` sections 1, 2, 5, 6, and 7 first.
 
 ## Step 1: Parse arguments
 
-$ARGUMENTS contains `<audit-folder> <finding-id>`.
-- audit-folder: path like `audits/2026-04-20-1530-standard`
-- finding-id: identifier in the synthesis (e.g. `HIGH-1`, `MEDIUM-3`) or the synthesis list number
+`$ARGUMENTS` is `<audit-folder> <finding-id>`.
 
-If arguments are missing or ambiguous, ask the user to clarify. Do not guess.
+- audit-folder: a path like `audits/2026-09-12-1402-standard`, or a round
+  folder inside one like `audits/2026-09-12-1402-standard/round-2`.
+- finding-id: a synthesis id in the form `<TIER>-<n>`, for example
+  `HIGH-1`, `MEDIUM-3`, `LOW-2`.
 
-## Step 2: Read the synthesis and the finding
+If either is missing or ambiguous, ask the user. Do not guess.
 
-- Read `<audit-folder>/synthesis.md`
-- Locate the finding matching `<finding-id>`
-- Extract: file:line reference, severity, one-line description, originating agent(s)
-- Read those agent report files under `<audit-folder>/agents/` to get the full context around the finding
+## Step 2: Read the config, the context, and the finding
 
-## Step 3: Check for pipe-connector analysis
+1. Read `.djinn/config.yaml` for `build_cmd` and `test_cmd`.
+2. Read `<audit-folder>/context.md` for `merge_base` and read
+   `<audit-folder>/fence.txt`.
+3. Read `<audit-folder>/synthesis.md`. Locate the finding whose id matches
+   exactly. If it does not exist, stop and list the ids that do.
+4. Take from the finding: tier, file:line, one-line description, the source
+   agents, and the report path. Open the named agent report(s) and read
+   the full finding text.
+5. If the tier is LOW, DEBT, or REC: say in the Step 8 report that this
+   finding does not block a merge, and ask the user to confirm they want a
+   brief for it before you write one.
 
-If `<audit-folder>/agents/pipe-connector.md` exists:
-- Read it
-- If it covers the file(s) involved in this finding, extract:
-  - Full list of importers / callers → feeds `work_set.files`
-  - Symbols declared / renamed → feeds `symbols_renamed` / `symbols_touched`
-  - Observable emitters/subscribers affected
-- Pre-fill work_set confidently
+**Verify the citation.** Open the cited file at the cited line. Confirm the
+symbol or construct the finding names is actually there. If it is not (file
+moved, line drifted, synthesis mis-merged two findings), write
+`# LINE MISMATCH: <what is actually at that line>` next to the reference in
+WHAT and say so in the Step 8 report. Do not silently correct the line
+number.
 
-If pipe-connector was not run, or doesn't cover this file:
-- Grep the repo for importers of the affected file
-- Grep for callers of any symbol the finding mentions renaming/changing
-- Pre-fill work_set with your best inference, and mark uncertain entries with a `# UNCERTAIN` trailing comment per line
-- Flag to the user in your final message: "pipe-connector was not run for this file — work_set is inferred, please verify before dispatch"
+## Step 3: Build the work set
 
-## Step 4: Load the template
+If `<audit-folder>/agents/pipe-connector.md` exists and covers the file(s)
+in the finding, take from it: the importer list (feeds `work_set.files`)
+and the exported symbols touched (feeds `symbols_touched`). Mark the brief
+`work_set_source: pipe-connector`.
 
-Read `ReviewRelay/templates/fix-brief.md`.
+Otherwise: grep the repo for importers of the affected file and for callers
+of any symbol the finding names. Pre-fill `work_set.files` and mark each
+inferred entry with a trailing `# UNCERTAIN`. Mark the brief
+`work_set_source: inferred`.
 
-## Step 5: Fill the skeleton
+Leave `symbols_renamed` empty unless the finding text itself proposes a
+rename in the form `old -> new`. Never invent a target name; a new name is
+a deliberation decision.
 
-Substitute placeholders:
+Any file placed in `work_set.files` that is not in `fence.txt` gets a
+trailing `# OUTSIDE AUDIT SCOPE`. List those in the Step 8 report. The
+reviewers never read those files.
 
-- `{{FIX_ID}}` → `<finding-id>-<slug>` where slug is 3-5 words from the finding description, kebab-case (e.g. `HIGH-1-rename-madeup-callers`)
-- `{{AUDIT_FILE}}` → path to the specific agent report that raised this (the most specific one)
-- `{{SEVERITY}}` → from synthesis (HIGH / MEDIUM / LOW / CRASH / CORRUPT)
-- `{{ISO_DATE}}` → today in `YYYY-MM-DD` format
-- `{{AGENT_NAME}}` → name of the originating agent
-- `{{QUOTED_FINDING}}` → exact quoted text from the agent's finding
-- `{{SYMPTOM}}` → one-line summary of the observable symptom
-- `{{SYNTHESIS_FILE}}` → `<audit-folder>/synthesis.md`
-- `{{PIPE_CONNECTOR_FILE_OR_NONE}}` → path if exists, else "none (inferred)"
-- `{{FILE_PATHS}}` → relevant files the fixer will likely need to read for context (not just edit)
+## Step 4: Check for overlap
 
-For **WHAT**: draft from the finding description. Be specific — name files and symbols, not "this" or "the function".
+Scan the rest of the synthesis Fix List for entries citing the same file.
+List any existing brief under `<audit-folder>/fixes/` whose
+`work_set.files` shares a file with this one. Report both lists in Step 8
+as "possible overlap". The human decides whether to merge.
 
-For **WHY**: keep the quoted finding, keep the TODO marker. **Do not speculate on deliberation context.** That's the human's job. Your WHY section should look like:
+## Step 5: Load the template
+
+Read `${CLAUDE_PLUGIN_ROOT}/templates/fix-brief.md`. If it cannot be read,
+stop and report. Do not reconstruct the template from memory.
+
+## Step 6: Fill the skeleton
+
+- `{{FIX_ID}}`: `<finding-id>-<slug>` where slug is 3 to 5 lowercase words
+  joined by hyphens, from the finding description. Example:
+  `HIGH-1-rename-shadowed-fn`.
+- `{{SEVERITY}}`: the tier word, copied verbatim from the synthesis heading.
+- `{{ISO_DATE}}`: today, `YYYY-MM-DD`.
+- `{{MODEL}}`: the model running this command.
+- `{{WORK_SET_SOURCE}}`: `pipe-connector` or `inferred`.
+- `{{AUDIT_FILE}}`: the most specific agent report that raised it.
+- `{{AGENT_NAME}}`, `{{QUOTED_FINDING}}`: from that report, verbatim.
+- `{{SYMPTOM}}`: one line, the observable symptom.
+- `{{SYNTHESIS_FILE}}`, `{{PIPE_CONNECTOR_FILE_OR_NONE}}`: real paths.
+- `{{FILE_PATHS}}`: files the fixer will need to read for context, not
+  just edit.
+- `{{BUILD_CMD}}`, `{{TEST_CMD}}`: from config, or `NONE CONFIGURED`.
+
+**WHAT**: draft from the finding. Name files and symbols, not "this" or
+"the function".
+
+**WHY**: keep the quoted finding, keep the TODO marker. Do not speculate on
+the deliberation context. That is the human's job. Shape:
 
 ```
-From bugs-reviewer: "HeightMap.madeup() shadows a Babylon built-in, causing ambiguous autocomplete."
+From <agent>: "<quoted finding>"
 
 **TODO (deliberation context):** _<fill in what was decided with the user>_
 
-This fix addresses the name-shadowing symptom. Pipe-connector shows 4 external callers across Toolbar.ts and DebugOverlay.ts — rename must cascade to all of them.
+This fix addresses <symptom>. <One line on the cascade, for example:
+pipe-connector shows N external callers across <file A> and <file B>; the
+change must reach all of them.>
 ```
 
-For **SUCCESS CRITERIA**: derive testable checkboxes from WHAT. Always include:
-- `npm run build` passes
-- No lingering references to removed/renamed symbols (grep-checkable)
+**SUCCESS CRITERIA**: testable checkboxes derived from WHAT. Always include
+the build criterion and the no-lingering-references criterion from the
+template.
 
-For **REFERENCES**: list the actual paths, not placeholders.
+## Step 7: Write the brief and the ledger line
 
-For **NOTES FOR FIXER**: keep as-is from template (boilerplate reminders about the work-set guard).
+`mkdir -p <audit-folder>/fixes/`. Write to
+`<audit-folder>/fixes/<finding-id>-<slug>.md`.
 
-## Step 6: Write the brief
+If a brief with that filename exists: read its `status`. If it is anything
+other than `pending`, refuse to overwrite; offer suffix or abort. If
+`pending`, offer suffix, overwrite, or abort.
 
-Ensure `<audit-folder>/fixes/` exists (`mkdir -p`).
+Append one line to `audits/LEDGER.md` (create with the header row from
+CONTRACTS.md section 6 if missing):
 
-Write to `<audit-folder>/fixes/<finding-id>-<slug>.md`.
+```
+| <YYYY-MM-DD HH:MM> | brief | <audit-folder> | <finding-id> -> fixes/<file> | work_set=<pipe-connector|inferred> | n/a |
+```
 
-If a brief with the same filename already exists: do NOT overwrite. Report to user that the brief already exists and ask whether to append a suffix, overwrite, or abort.
+## Step 8: Report
 
-## Step 7: Report
-
-Tell the user:
-- Path of the brief just created
-- Which fields need human input (always: the TODO in WHY; sometimes: work_set if pipe-connector was missing)
-- One-line suggestion of next step:
-  - If work_set is confident: "Fill in WHY, then `/djinn:dispatch <brief-path>`"
-  - If work_set is inferred: "Verify work_set against the actual importers, fill in WHY, then `/djinn:dispatch <brief-path>`"
+- Path of the brief.
+- Fields needing human input: always the TODO in WHY; the `# UNCERTAIN`
+  entries if work_set was inferred.
+- Files marked `# OUTSIDE AUDIT SCOPE`, if any.
+- Line mismatch, if any.
+- Possible overlap, if any.
+- Next step: "Fill in WHY, verify work_set, then
+  `/djinn:dispatch <brief-path>`."
 
 ## Rules
 
-- Do NOT dispatch. Dispatch is a separate command (`/djinn:dispatch`).
-- Do NOT fill WHY's deliberation context with speculation. Structural draft only — the TODO stays.
-- If the same underlying fix shows up under two synthesis findings, flag it and suggest merging into one brief rather than generating two.
-- Do NOT modify any code. Briefs only describe fixes — they don't execute them.
+- Do NOT dispatch. Dispatch is a separate command.
+- Do NOT fill WHY's deliberation context with speculation. The TODO stays.
+- Do NOT modify any code.
+- Bash is for `date` and `mkdir -p` only. No build, no tests, no git
+  command that changes state.
+
+## Runtime notes
+
+Claude Code specific: `$ARGUMENTS`, `allowed-tools`,
+`${CLAUDE_PLUGIN_ROOT}`. An adapter for another runtime supplies the same
+three. This command runs in the caller's session and writes no code, so it
+carries no model line.

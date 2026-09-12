@@ -1,0 +1,48 @@
+# Djinn Relay per-project config.
+# Copy to <project>/.djinn/config.yaml and fill in. Commit it.
+# The commands read this file; agents never guess these values.
+
+# Required. The branch this work merges into. The fence is computed from
+# git merge-base <base_branch> HEAD. Never HEAD~1.
+base_branch: main
+
+# Command that must pass between dispatch batches. "none" skips the gate
+# loudly (dispatch prints a WARN in the plan and the final report).
+build_cmd: none
+
+# Full test suite, run once per dispatch after all batches land. "none"
+# skips it. This is the landing lane; it is never run per edit.
+test_cmd: none
+
+# Pattern index the first-pass checker reads. Project-local so the whole
+# team shares it. "none" if the project has not started one.
+known_bugs_index: .djinn/known-bugs.md
+
+# Files every agent reads before reviewing.
+conventions_files:
+  - CLAUDE.md
+
+# Directories where per-call cost matters (per tick, per frame, per
+# request). perf-reviewer traces call paths from here.
+hot_paths: []
+
+# Plan or spec the current diff claims to implement. devils-advocate and
+# test-strategist read it. "none" if there is no such document.
+goal_doc: none
+
+# Dependency facts for dependency-reviewer. It runs whenever the fence
+# touches a manifest or lockfile listed here.
+deps:
+  manifests: []          # e.g. [package.json] or [pyproject.toml]
+  lockfiles: []          # e.g. [package-lock.json] or [uv.lock]
+  list_cmd: none         # e.g. "npm ls --depth=0" or "pip list"
+  check_cmd: none        # e.g. "npm audit" or "pip check"
+  platform: none         # e.g. "Node 22, Linux" or "CUDA 12.4, Python 3.11"
+  coupled_sets: []       # packages that must move together
+  landmines: []          # known bad version combinations, one line each
+
+# Free text every agent reads as architecture context. State model, event
+# mechanism, render or request loop, anything a new reviewer needs. Keep it
+# under 40 lines; link to a doc for more.
+project_notes: |
+  none

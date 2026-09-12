@@ -1,182 +1,290 @@
 ---
 name: dispatch
-description: Dispatch one or more fix briefs to fixer agents. Usage - /djinn:dispatch <brief-path> [<brief-path>...]. Computes dependency DAG from depends_on + work-set overlap, batches fixes (parallel where disjoint, sequential where dependent), spawns fresh Opus fixer agents per brief at max effort, saves diffs, and auto-runs Round 2 audit on the combined change.
+description: Dispatch one or more fix briefs to fixer agents. Usage - /djinn:dispatch <brief-path> [<brief-path>...]. Builds a dependency order from depends_on plus work-set overlap, batches fixes (parallel where disjoint, sequential where dependent), spawns a fresh Opus fixer per brief, saves a diff and a report per fix, appends a ledger line on every exit path, and runs the next audit round on the combined change.
 allowed-tools: Read, Grep, Glob, Write, Edit, Agent, Bash
 ---
 
 # Djinn Dispatch
 
-You are orchestrating the execution phase of the relay. Briefs in, diffs + audit out.
+You are orchestrating the execution phase. Briefs in, diffs and a fresh
+audit round out. This is the only command that changes code, so it is the
+only command where an unlogged run is unacceptable.
+
+Read `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` first.
 
 ## Step 1: Parse arguments
 
-$ARGUMENTS contains one or more space-separated paths to brief files (e.g. `audits/2026-04-20-1530-standard/fixes/HIGH-1-rename.md`).
+`$ARGUMENTS` is one or more space-separated brief paths, for example
+`audits/2026-09-12-1402-standard/fixes/HIGH-1-rename-shadowed-fn.md`.
 
-If no briefs specified, ask the user which briefs to dispatch. List the pending briefs in the most recent audit folder if helpful.
+If none are given: list every brief with `status: pending` under the most
+recent `audits/*/fixes/`, and ask which to dispatch.
 
-## Step 2: Load briefs + validate
+Brief order is the order the paths appear in `$ARGUMENTS`. That order
+breaks every tie below.
 
-For each brief path:
-- Read the full file, parse the YAML frontmatter
-- Extract: `id`, `status`, `severity`, `work_set.files`, `work_set.symbols_renamed`, `work_set.symbols_touched`, `depends_on`
-- Validation:
-  - If `status != pending` → skip with a note (already `landed`, `blocked-*`, or `in-progress`)
-  - If `work_set.files` is empty → REJECT, tell user the brief needs work_set filled in before dispatch
-  - If any file in `work_set.files` doesn't exist → REJECT, report
-  - If WHY section still contains `TODO (deliberation context)` with empty body → WARN, ask user to confirm they want to dispatch without filled-in WHY (the fixer benefits from it)
+## Step 2: Load config and briefs, validate
 
-Collect the valid briefs. Note all audit-folder paths (they should all share the same audit run — if not, flag and ask the user to confirm).
+Read `.djinn/config.yaml` for `build_cmd` and `test_cmd`. If `build_cmd` is
+`none`, print `WARN: no build_cmd configured; build gates are skipped` in
+the plan and in the final report.
 
-## Step 3: Build dependency DAG
+For each brief path, read the file and parse the YAML frontmatter: `id`,
+`status`, `severity`, `work_set.files`, `work_set.symbols_renamed`,
+`work_set.symbols_touched`, `depends_on`, `work_set_source`.
+
+Validation, per brief:
+
+- `status` is not `pending`: skip with a note.
+- `work_set.files` is empty: REJECT, the brief needs a work set.
+- A file in `work_set.files` does not exist: REJECT, report which.
+- The WHY section still contains the template placeholder `_<fill in`:
+  WARN and ask the user to confirm dispatch without a filled-in WHY.
+- `work_set_source: inferred`: WARN that reviewers did not verify the
+  work set.
+- For each `old -> new` in `symbols_renamed`: grep the repo for `old`
+  (word boundary, excluding `audits/`). Every matching file must be in
+  this brief's `work_set.files` or in the `work_set.files` of a brief that
+  depends on it. Otherwise WARN: `<id> renames <old> but <file> references
+  it and no brief owns that file; the fixer will return BLOCKED_SCOPE`.
+  Ask the user to amend before building the plan.
+
+All briefs should share one audit folder. If not, flag it and ask.
+
+## Step 3: Build the dependency order
 
 For each pair of briefs (A, B):
 
-**Explicit dependency** — B's `depends_on` contains A's `id` → edge A → B.
+- **Explicit**: B's `depends_on` names A's `id`: A runs before B.
+- **Rename collision**: A renames `foo -> bar` and a file in B's work set
+  references `foo`: A runs before B, so B sees the post-rename state.
+- **Symbol collision**: both touch the same symbol: argument order decides.
+- **File collision**: any shared file in `work_set.files`: they cannot run
+  in the same batch. Argument order decides.
 
-**Implicit dependency** — symbol-level collision:
-- A's `symbols_renamed` has `foo → bar`, and B's `work_set.files` contains a file that (by grep) references `foo` → edge A → B (B must see post-rename state)
-- A's `symbols_touched` includes a symbol B also touches → edge A → B by brief-id order (earlier wins unless user overrides)
+If there is a cycle, halt, name the briefs in it, ask the user to resolve.
 
-**Implicit dependency** — file-level collision:
-- A's `work_set.files` and B's `work_set.files` share any file → they CANNOT run in the same batch. Earlier brief-id wins, later depends on it.
+## Step 4: Batch
 
-Check for cycles. If cycle detected → halt, report which briefs form the cycle, ask user to resolve.
+Batch N holds every brief whose dependencies all landed in earlier batches
+and whose work sets are pairwise disjoint within the batch. At most 4
+fixers per batch; split larger batches in argument order.
 
-## Step 4: Topologically sort into batches
-
-Use standard topo sort with batching: each batch N = all briefs whose dependencies are all in batches 0..N-1, AND whose work-sets within the batch are pairwise disjoint.
-
-If two briefs at the same DAG level still have overlapping work-sets (shouldn't happen after step 3, but sanity check), split into separate batches — earlier brief-id first.
-
-**Max parallelism per batch: 4 fixers.** If a batch has more than 4 disjoint briefs, split into sub-batches of 4.
-
-## Step 5: Report the plan to the user
-
-Before spawning anything, print:
+## Step 5: Print the plan and wait
 
 ```
 Dispatch plan:
-  Batch 1 (parallel): [brief-id-1, brief-id-2, brief-id-3]
-  Batch 2 (waits for batch 1): [brief-id-4]
-  Batch 3 (waits for batch 2): [brief-id-5, brief-id-6]
-
-Round 2 audit will run automatically after all briefs land.
-Proceed? (Say "go" or specify changes.)
+  Batch 1 (parallel): [HIGH-1, MEDIUM-2]
+  Batch 2 (waits for batch 1): [HIGH-2]
+    because HIGH-2 edits src/ui/toolbar.ts, which HIGH-1 also edits
+  Batch 3 (waits for batch 2): [MEDIUM-1]
+    because MEDIUM-1 depends_on HIGH-2
+Tie-break order is your argument order.
+Build command: <build_cmd or "none configured, gates skipped">
+Test command: <test_cmd or "none configured">
+After all batches land, round <n> review spawns <k> reviewers (<names>)
+on Opus.
+Proceed? Say "go" or specify changes.
 ```
 
-Wait for user confirmation before spawning. This is the one human gate in dispatch — it's there because spawning fixers spends tokens and modifies code.
+Wait for the user. This is the one human gate in dispatch. It exists
+because spawning fixers spends tokens and modifies code.
 
 ## Step 6: Execute batches
 
 For each batch, in order:
 
+### Snapshot
+
+Before spawning, snapshot the working tree without touching refs:
+`PRE=$(git stash create)`. If it prints nothing (clean tree), `PRE=HEAD`.
+
 ### Spawn fixers in parallel
 
-For each brief in the batch, use the Agent tool with `subagent_type: "fixer"`. Send all fixer calls for a given batch in a single message with multiple Agent tool-use blocks.
-
-Each fixer's prompt:
+For each brief in the batch, use the Agent tool with
+`subagent_type: "fixer"` and `model: "opus"`. Send all fixer calls for the
+batch in one message. Each prompt:
 
 ```
 Execute the fix described in <brief-absolute-path>.
 
-You are running under the /djinn:dispatch orchestrator. Follow the fixer protocol in your system prompt:
-- Enforce work_set as a hard boundary
-- If scope drifts, STOP and report BLOCKED_SCOPE (do not silently expand)
-- After edits, run npm run build and include output in your report
-- Return a Fix Report in the documented format
+You are running under /djinn:dispatch. Follow the fixer protocol in your
+agent definition:
+- Confirm the defect exists at the cited location before editing.
+- Run <build_cmd> before your first edit and record the baseline.
+- work_set.files is a hard boundary. If the fix needs a file outside it,
+  STOP and return BLOCKED_SCOPE with a proposed amended work set.
+- After edits, run <build_cmd> and paste its full output in your report.
+- Return a Fix Report in the documented format. The first non-blank line
+  under "## Status" is exactly one of COMPLETED, BLOCKED_SCOPE,
+  BLOCKED_BUILD, BLOCKED_OTHER.
 
-The brief's frontmatter is the contract. Honor it.
+The brief's frontmatter is the contract.
 ```
 
-### Wait and collect
+### Collect
 
-When all fixers in the batch return:
+When every fixer in the batch has returned:
 
-1. **Update brief status.** For each brief, edit its frontmatter `status` field:
-   - Fixer returned COMPLETED → `landed`
-   - Fixer returned BLOCKED_SCOPE → `blocked-scope`
-   - Fixer returned BLOCKED_BUILD → `blocked-build`
-   - Fixer returned BLOCKED_OTHER → `blocked-other`
+1. **Parse each Fix Report.** Status is the first non-blank line under
+   `## Status`. Anything else is BLOCKED_OTHER. A COMPLETED report with any
+   unchecked `- [ ]` line under Success Criteria, or with Build Status
+   FAILING, is BLOCKED_OTHER with reason "completed with unmet criteria".
+   Only a clean COMPLETED becomes `landed`.
 
-2. **Save diffs per fix.** For each COMPLETED brief:
-   - Run `git diff -- <space-separated work_set.files>` via Bash
-   - Write the output to `<audit-folder>/fixes/<id>.diff`
+2. **Write the fix report.** For every brief, write
+   `<audit-folder>/fixes/<id>-report.md`: the attribution header
+   (`author: Claude Opus (fixer agent, via /djinn:dispatch)`,
+   `status: agent output, not yet reviewed`), then the fixer's report
+   verbatim. This file is the fix summary. A brief is not landed until it
+   exists.
 
-3. **Save fixer reports.** Write each fixer's full report verbatim to `<audit-folder>/fixes/<id>-report.md`.
+3. **Save the diff.** For each landed brief:
+   - `git diff $PRE -- <work_set.files>` for tracked files.
+   - For each work-set file that `git status --porcelain` shows as
+     untracked (`??`): append `git diff --no-index /dev/null <file>`.
+   - Write to `<audit-folder>/fixes/<id>.diff` with a first line
+     `# base: $PRE  batch: <k>  brief: <id>`.
+
+4. **Update brief status.** Edit only the `status:` line: `landed`,
+   `blocked-scope`, `blocked-build`, or `blocked-other`.
 
 ### Handle blockers
 
-If any brief in the batch is `blocked-*`:
-- HALT further batches
-- Report all blockers to the user with:
-  - Brief IDs blocked, status of each
-  - The fixer's proposed amended brief (if provided)
-  - Options: amend & re-dispatch, skip & continue, abort
-- Wait for user decision
+If any brief in the batch is blocked: HALT further batches. Report each
+blocked brief, its status, and the fixer's proposed amended work set if it
+gave one. Options, the user picks one per blocked brief:
 
-### Build check between batches
+- **amend**: on the user's explicit word, write the fixer's proposed
+  `work_set` into the brief's frontmatter, set `status: pending`, and
+  re-run Steps 3 to 5 for the remaining briefs. The plan is re-printed and
+  re-confirmed. This is the only case where dispatch edits a work set, and
+  only with text the user approved.
+- **skip**: mark the brief `skipped` in the plan. Every brief that depends
+  on it is skipped too; name them.
+- **abort**: stop. Landed briefs stay landed. Go to Step 8.
 
-After the batch lands (all successful), run `npm run build` globally. If it fails:
-- HALT
-- Report the failure with errors
-- Do not spawn next batch until user resolves (typically by amending a brief or spawning a new fix)
+### Build gate between batches
 
-## Step 7: Round 2 audit (automatic, no gate)
+After a batch lands with no blockers, run `<build_cmd>` at the repo root.
+If it fails: HALT, report the errors, go to Step 8. Do not spawn the next
+batch until the user resolves it. If `build_cmd` is `none`, print the WARN
+line again and continue.
 
-After ALL batches land successfully:
+## Step 7: Next audit round (automatic, no gate)
 
-1. **Determine changed files.** Run `git diff --name-only` against the base commit the original audit ran on. If the base isn't recorded, use `git diff --name-only HEAD~N` where N = count of commits since audit (or accept the cumulative diff of all fix .diff files).
+After all batches land:
 
-2. **Read the scope used in the original audit** from the audit folder name (e.g. `2026-04-20-1530-standard` → scope was `standard`) or from `<audit-folder>/synthesis.md` if it recorded the agent list.
+1. **Round number.** Round = 1 + the count of `round-` segments in the
+   audit-folder path. If it would be 4 or more, do not spawn. Report
+   `Max 3 rounds reached. Stop and deliberate.` and go to Step 8.
+   Create `<audit-folder>/round-<n>/agents/`. Never nest
+   `round-2/round-2/`; the round folder always sits directly under the
+   original audit folder.
 
-3. **Create round-2 folder.** `mkdir -p <audit-folder>/round-2/agents`.
+2. **Landing lane.** If `test_cmd` is configured, run it once, at the repo
+   root, and save the output to `<audit-folder>/round-<n>/test-output.txt`.
+   A failing test run does not halt; it goes to synthesis as input.
 
-4. **Spawn the same agents** as the original scope, but with Round 2 instructions:
+3. **Fence.** Read `merge_base` from `<audit-folder>/context.md`. If the
+   file is missing, halt and ask for the base ref. Do not guess.
+   FENCE = union of `work_set.files` across all landed briefs.
+   Cross-check with `git diff --name-only <merge_base> -- . ':!audits'`.
+   Any file in that output that is neither in FENCE nor in the original
+   `fence.txt` is a scope leak: name it in the final report and add it to
+   FENCE so this round reviews it. Write FENCE to
+   `<audit-folder>/round-<n>/fence.txt`.
+
+4. **Agents.** Read `agents_run` from `context.md`. Spawn the same agents
+   with the same wave structure as `/djinn:review` (known-bugchecker
+   alone, read-only agents in parallel, executing agents serially), every
+   call with `model: "opus"`. Each prompt is the fence block from
+   `/djinn:review` with the round fence, plus:
+
    ```
-   You are running Round 2 verification. The original Round 1 reports are in <audit-folder>/agents/. The synthesis is <audit-folder>/synthesis.md. The fixes applied are in <audit-folder>/fixes/*.diff.
-
-   Scope your review to the changed files only (listed below). Specifically:
-   - Verify each HIGH/MEDIUM finding from Round 1 synthesis is resolved
-   - Catch new issues introduced by the fixes
-   - Check blast radius — peek at callers/consumers of any changed signatures
-
-   Write your report to <audit-folder>/round-2/agents/<your-name>.md.
-
-   Changed files: <list>
+   This is round <n>. The fixes applied since round <n-1> are in
+   <audit-folder>/fixes/*.diff. Look for new issues introduced by those
+   diffs and for regressions in callers of any changed symbol. Do not
+   re-verify round <n-1> findings; synthesis owns that.
+   Write to <audit-folder>/round-<n>/agents/<your-name>.md.
    ```
 
-5. Spawn synthesis on Round 2 reports → writes `<audit-folder>/round-2/synthesis.md`.
+5. **Synthesis.** Spawn synthesis with `model: "opus"`. Prompt: the report
+   paths, the round fence, the prior round's synthesis path, every
+   `fixes/<id>.diff`, the test output path if any, and: "Produce the Round
+   1 status table first, verified by reading each diff and the file, not
+   the fixer's report. Write to `<audit-folder>/round-<n>/synthesis.md`."
 
-## Step 8: Final report
+6. **Consolidator.** Spawn consolidator with `model: "opus"`. Prompt:
+   "MODE: post-dispatch. The fixes in `<audit-folder>/fixes/` landed.
+   Dispositions: <id: landed | blocked | skipped, one per brief>. The
+   round <n> synthesis with its Round 1 status table is at
+   `<audit-folder>/round-<n>/synthesis.md`. The known-bugs index is at
+   `<known_bugs_index>`. Write to `<audit-folder>/round-<n>/consolidator.md`."
+   If it replied but the file is missing, write its returned text there
+   yourself with the attribution header. Do not apply it to the index.
 
-Tell the user:
+## Step 8: Ledger line (always, including halts)
+
+Append exactly one line to `audits/LEDGER.md` (create with the header row
+from CONTRACTS.md section 6 if missing). Write it on every exit: complete,
+halted on blocker, halted on build failure, halted on cycle, aborted after
+the plan, max rounds reached.
 
 ```
-Dispatch complete.
-
-Landed: <count> briefs
-  - <id>: <one-line summary>
-  ...
-Blocked: <count> briefs (if any)
-  - <id>: <blocker reason>
-
-Round 2 audit folder: <audit-folder>/round-2/
-Round 2 ship verdict: <SHIP | FIX THEN SHIP | ESCALATE>
-  - HIGH: <n>, MEDIUM: <n>, LOW: <n>
-
-Next step: <suggestion>
-  - SHIP → done
-  - FIX THEN SHIP → /djinn:brief <audit-folder>/round-2 <finding-id> for each new finding, then dispatch
-  - ESCALATE → open <audit-folder>/round-2/synthesis.md and deliberate
+| <YYYY-MM-DD HH:MM> | dispatch | <audit-folder> | briefs=<ids> | landed <n> / blocked <n> / skipped <n> <COMPLETE or HALTED batch <k>: <reason>> | round-<n>=<verdict or not run> H<n> M<n> L<n> D<n> R<n> |
 ```
 
-Do NOT auto-fix Round 2 findings. The user decides next step.
+Every landed brief has its `fixes/<id>-report.md` on disk before this
+line is written. If one is missing, write it first from the fixer's
+return, then write the ledger line.
+
+## Step 9: Final report
+
+```
+Dispatch complete | halted.
+
+Landed: <n>
+  - <id>: <one-line summary from its report>
+Blocked: <n>
+  - <id>: <status and reason>
+Skipped: <n>
+Scope leaks: <files, or none>
+
+Round <n> folder: <audit-folder>/round-<n>/
+Round <n> verdict: <SHIP | FIX THEN SHIP | ESCALATE>
+  - Resolved: <n> of <m> prior HIGH and MEDIUM
+  - New: HIGH <n>, MEDIUM <n>, LOW <n>, DEBT <n>, REC <n>
+  - Outside-fence reads: <n> (see round-<n>/synthesis.md)
+  - Landing lane: <passed | failed | not configured>
+
+Next step:
+  - SHIP: done. Nothing blocks a merge to <base_branch>.
+  - FIX THEN SHIP: /djinn:brief <audit-folder>/round-<n> <id> for each
+    finding, then dispatch.
+  - ESCALATE: open round-<n>/synthesis.md, section Conflicts Resolved.
+```
+
+Do NOT auto-fix findings from the new round. The user decides.
 
 ## Rules
 
-- Max parallelism per batch: 4 fixers.
-- Never spawn a new batch if the previous batch's build failed.
-- Never dispatch a brief with `status != pending`.
-- Never modify briefs' WHAT / WHY / work_set fields — only the `status` frontmatter line.
-- If git is in an unclean state before dispatch, warn the user (uncommitted changes may contaminate the diffs saved per fix).
-- Do NOT commit, push, or run git state-changing operations unless the user explicitly asks.
+- Max 4 fixers per batch.
+- Every Agent call passes `model: "opus"` explicitly.
+- Never spawn a new batch after a failed build gate.
+- Never dispatch a brief whose status is not `pending`.
+- Never modify a brief's WHAT, WHY, or work_set, except the amend case
+  above, with text the user approved.
+- Do NOT commit, push, stash (beyond `git stash create`, which moves no
+  ref and no file), or run any git command that changes state, unless the
+  user explicitly asks.
+
+## Runtime notes
+
+Claude Code specific: `$ARGUMENTS`, `allowed-tools`,
+`${CLAUDE_PLUGIN_ROOT}`, the Agent tool with `subagent_type` and `model`,
+parallel spawns as several Agent calls in one message, and agent
+definitions in `agents/*.md` frontmatter. An adapter for another runtime
+must provide spawn-with-prompt-and-model, wait-for-all, and the fixer's
+return text as a string. "Max effort" is set by the fixer's own prompt;
+there is no effort parameter on the Agent call.
