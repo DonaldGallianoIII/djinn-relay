@@ -10,7 +10,7 @@ status: review, not yet applied
 > Cross-checked against relay.md, REVIEW.md, AGENTS.md, and the other agent
 > prompts for overlap. No edits applied.
 
-File under review: `/home/donaldgalliano/djinn-relay/plugins/djinn/agents/security-reviewer.md`
+File under review: `~/djinn-relay/plugins/djinn/agents/security-reviewer.md`
 
 **1. HIGH is defined so loosely that a naming nit can block ship** (line 43)
 Current: `**HIGH:** Exposed secrets, security vulnerability, or code that would fail a formal review`

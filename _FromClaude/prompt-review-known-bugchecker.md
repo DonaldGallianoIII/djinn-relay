@@ -20,7 +20,7 @@ Proposed: Keep the tool list. Add one line under Output format: "Return the full
 Why: `review.md` line 53 instructs the agent to write its report to disk, but the frontmatter denies Write. On Claude Code the agent either fails or improvises. `consolidator.md` line 12 already uses the return-and-orchestrator-writes pattern; copy it. This mismatch exists in every review agent (all are `Read, Grep, Glob`), so fix it once in the command and once here, not by adding Write to fifteen frontmatters.
 
 **3. Hardcoded GameEngine memory path** (line 10)
-Current: "Read the bugs_to_avoid index at `/home/donaldgalliano/.claude/projects/-home-donaldgalliano-GameEngine/memory/bugs_to_avoid.md`."
+Current: "Read the bugs_to_avoid index at `~/.claude/projects/-home-donaldgalliano-GameEngine/memory/bugs_to_avoid.md`."
 Proposed: "Your dispatch names the known-bugs index path (from the project config). Read it. For each entry, read its linked detail file. If the dispatch gives no path, or the file does not exist, output `## Index: NOT FOUND at <path>` followed by `## Patterns Checked: 0/0` and stop. Do not search the filesystem for an index."
 Why: Decision 2 moves every project-specific path into per-project config. The current line makes the agent useless on any other repo and, worse, on a fresh machine it will Glob around looking for the file, which is a fence violation (decision 1). `bugs-reviewer.md` line 10 already has "if it exists" handling; this prompt has none.
 
