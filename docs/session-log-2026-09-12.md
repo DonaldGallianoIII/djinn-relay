@@ -8,8 +8,7 @@ status: written by the orchestrating session, reviewed by no human yet
 # What was built
 
 **A standalone plugin repo.** `~/djinn-relay` seeded from the 2026-08-01
-ReviewRelay (byte-identical copies existed in PAC-ChromeEXT, jax_tcg,
-MechProject, GameEngine). Wrapped as a Claude Code marketplace:
+ReviewRelay (byte-identical copies existed in four other private repos). Wrapped as a Claude Code marketplace:
 `.claude-plugin/marketplace.json` at the root, the plugin at
 `plugins/djinn/`. Both manifests pass `claude plugin validate`. Version
 bumped 2.0.0 to 2.1.0. Branch `Claude-Development-djinn-relay`; no `main`
@@ -24,7 +23,7 @@ header, model and tool rules, runtime notes, voice.
 
 **Every prompt rewritten.** 17 agents, 3 commands, relay.md, the brief
 template. Line count went from 2417 to 3895 across agents and commands.
-Nothing project-specific remains: no GameEngine, Babylon, EditorState,
+Nothing project-specific remains: no the engine repo, Babylon, EditorState,
 Vite, JAX, npm, or hardcoded memory paths. Everything on Opus, zero
 Sonnet.
 
@@ -90,7 +89,7 @@ one for a missing config. A fix is not landed until
 - `claude plugin validate .` and `claude plugin validate plugins/djinn`:
   both pass.
 - `grep -c "—\|–"` across every plugin file: zero.
-- Project-specific word grep (gameengine, babylon, editorstate, vite,
+- Project-specific word grep (engine repo, babylon, editorstate, vite,
   djinnax, bugs_to_avoid, sonnet): zero hits outside the one sentence in
   CONTRACTS.md that bans Sonnet.
 - `model:` lines across 17 agents: 17 `opus`.
@@ -99,7 +98,7 @@ one for a missing config. A fix is not landed until
 - Not tested: the plugin has not been installed or run on a real repo.
   Every claim above is about the text of the prompts, not their behavior.
   First real test: `/plugin marketplace add ~/djinn-relay`, install, then
-  `/djinn:review quick` on the Sleep repo with a `.djinn/config.yaml`.
+  `/djinn:review quick` on a private repo with a `.djinn/config.yaml`.
 
 # Open items
 
@@ -108,7 +107,7 @@ one for a missing config. A fix is not landed until
 - Section 3 of CONTRACTS.md: state which template parts are fixed and
   which agents may extend.
 - Two agents' Runtime notes use `#` rather than `##`. Cosmetic.
-- REVIEW.md in `~/Conventions` still points at the FoodBank copy of the
+- REVIEW.md in `~/Conventions` still points at the automation repo copy of the
   relay. Update it to `~/djinn-relay` once the plugin has run once.
 - Codex adapter: not started. Every file ends with a Runtime notes section
   naming what the adapter must map.

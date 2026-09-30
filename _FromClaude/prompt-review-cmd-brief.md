@@ -15,7 +15,7 @@ Why: `agents/synthesis.md` lines 41 to 55 emit one running numbered list with no
 **2. The template path is wrong and will fail at runtime** (line 44)
 Current: "Read `ReviewRelay/templates/fix-brief.md`."
 Proposed: "Read `${CLAUDE_PLUGIN_ROOT}/templates/fix-brief.md`. (Claude Code resolves this variable to the plugin's install directory; a Codex adapter must supply the equivalent path.) If the template cannot be read, stop and report. Do not reconstruct the template from memory."
-Why: The file lives at `plugins/djinn/templates/fix-brief.md`, and `ReviewRelay/` is a path from the old FoodBank location (REVIEW.md line 40). Relative to a target project, neither path exists. Without the fallback rule the command will silently invent a template and dispatch.md's frontmatter parser (dispatch.md lines 20 to 26) may not find the fields it expects.
+Why: The file lives at `plugins/djinn/templates/fix-brief.md`, and `ReviewRelay/` is a path from the old the automation repo location (REVIEW.md line 40). Relative to a target project, neither path exists. Without the fallback rule the command will silently invent a template and dispatch.md's frontmatter parser (dispatch.md lines 20 to 26) may not find the fields it expects.
 
 **3. Hardcoded `npm run build` violates the project-agnostic decision** (line 74; template lines 30 and 44)
 Current: "`npm run build` passes"

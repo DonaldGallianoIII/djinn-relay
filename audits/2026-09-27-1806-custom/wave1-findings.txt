@@ -1,0 +1,78 @@
+== breaker
+HIGH-1. `plugins/djinn/commands/review.md:162` An untracked secret file gets written in full into `input-diff.patch`, and the audit folder is committed.
+HIGH-2. `plugins/djinn/agents/proof-runner.md:147` The heap cap bounds the V8 old-space heap only, so the 30 GB incident class still takes the machine down through Buffer memory.
+MEDIUM-1. `plugins/djinn/agents/proof-runner.md:119` The bot, browser and child-process screen reads only the chosen test file, so a helper one import away launches a browser or an uncapped process.
+MEDIUM-2. `plugins/djinn/agents/proof-runner.md:119` Nothing stops a test that makes a network call, including a billed API call.
+MEDIUM-3. `plugins/djinn/agents/proof-runner.md:147` With the documented example `timeout_s: 120`, the harness's own Bash timeout (120 s by default) fires at or before GNU `timeout`, so TIMEOUT is nev
+MEDIUM-4. `plugins/djinn/agents/proof-runner.md:135` The tree snapshot misses writes to ignored files, content changes to already untracked files, and a rewrite of an already modified binary.
+MEDIUM-5. `plugins/djinn/commands/review.md:150` Thousands of untracked files (an unignored `node_modules/` or `.venv/`) blow up the fence, fire every conditional agent, and overflow the per-file step
+MEDIUM-6. `plugins/djinn/agents/proof-runner.md:135` The tree snapshot floods the agent's context in a repo with many untracked files.
+MEDIUM-7. `plugins/djinn/agents/proof-runner.md:63` The refusal checks only that `{heap_mb}` and `{file}` appear somewhere in `proof.runner`, so a template can pass it while escaping the timeout or ca
+MEDIUM-8. `plugins/djinn/commands/dispatch.md:236` Files that the landing lane's tests or proof-runner write into the tree get reported as fixer scope leaks and reviewed in round n.
+LOW-1. `plugins/djinn/agents/gate-auditor.md:92` `git diff --name-only HEAD` is allowed, but it can rewrite the index the same way the excluded `git status` can.
+LOW-2. `plugins/djinn/agents/gate-auditor.md:93` "`grep` or `rg` over the repo" names the commands but not their flags. `rg --pre <cmd>` executes a program per file, and `grep -r` reads `.env`.
+LOW-3. `plugins/djinn/commands/review.md:220` Tree-facts item 5 builds a regex from a raw base name, so short or special names produce floods of false "imports an untracked file" facts, or a grep erro
+LOW-4. `plugins/djinn/commands/review.md:84` The trigger regexes match their own definition, and any markdown prose that names the APIs.
+LOW-5. `.djinn/config.yaml:14` The voice `build_cmd` checks `~/Conventions` instead of the plugin when `find` returns nothing, and crashes on a path with a space.
+LOW-6. `plugins/djinn/agents/proof-runner.md:147` `{file}` is spliced into the shell line unquoted.
+LOW-7. `plugins/djinn/agents/proof-runner.md:81` Index mode has no check that an entry belongs to this repo, and its ids are not unique.
+LOW-8. `plugins/djinn/agents/proof-runner.md:59` `proof.max_files` has no upper bound, and each run can put about 20 KB of output into context.
+DEBT-1. `plugins/djinn/commands/review.md:66` A project with no new config blocks does not review the way it did in 2.2.0, and no file says so.
+REC-1. `plugins/djinn/agents/proof-runner.md:130` A dry-run fixture repo for proof-runner: one test that allocates Buffers to 2x `heap_mb`, one that hangs past `timeout_s`, one that writes an ignored 
+REC-2. `plugins/djinn/commands/review.md:145` A fixture repo for the preflight: an unignored `.env`, 5,000 untracked files, a 200 MB untracked JSON, and a file named `a b.md`. Assert the patch holds n
+== integration-reviewer
+MEDIUM-1. `plugins/djinn/agents/gate-auditor.md:280` Three new agents (and five older ones) tell themselves to own the prior round's status, while dispatch and synthesis say synthesis owns it. The dom
+MEDIUM-2. `plugins/djinn/agents/proof-runner.md:199` proof-runner files blocking-tier findings that no consumer merges, so a CAPPED test, a timeout or a test that rewrote the tree never blocks and nev
+MEDIUM-3. `plugins/djinn/commands/review.md:84` The accessibility trigger misses the terminal color forms that ux-reviewer now hands to accessibility-reviewer, so the colorblind hard rule on terminal 
+LOW-1. `plugins/djinn/commands/review.md:22` "Do not read `proof` here" contradicts the cost-complexity-reviewer block at review.md:276, which pastes `proof.heap_mb`. A literal orchestrator pastes `no
+LOW-2. `plugins/djinn/agents/devils-advocate.md:3` The description says "Runs in `full` and `perf` scopes, and whenever the diff touches a file `project_notes` calls unproven". review.md:46 leaves it 
+LOW-3. `plugins/djinn/agents/integration-reviewer.md:125` Three lanes now claim "is this comment or doc claim true", and none hands off to another. integration-reviewer.md:84 to :90 and :125 to :126 (
+LOW-4. `plugins/djinn/agents/cost-complexity-reviewer.md:225` Two lane pairs can file the same line with no handoff sentence on either side. (a) bugs-reviewer and cost-complexity-reviewer: unbounded m
+LOW-5. `plugins/djinn/agents/synthesis.md:19` The "Agents' own sections" list reads as complete and misses: accessibility-reviewer's `## UI files` (accessibility-reviewer.md:316); dependency-reviewer'
+LOW-6. `plugins/djinn/commands/dispatch.md:274` The round synthesis prompt carries no scope, no expected agents, no not-run list and no tree-facts path. synthesis.md:157 to :160 opens with `scope:` an
+LOW-7. `plugins/djinn/agents/proof-runner.md:81` Index mode keys on "entries whose Status line says 'untested'", and consolidator.md:93 on an entry "whose Status says `untested`". The configured index
+LOW-8. `plugins/djinn/templates/config.yaml:93` `test_globs: []` and `max_files: none` are values, not absent keys. proof-runner's defaults apply only when a key is "absent" (proof-runner.md:57 to :59
+LOW-9. `plugins/djinn/agents/gate-auditor.md:40` cites `test-strategist.md:18` for "Test files that reference a changed module by import or by name". This build's own edit to test-strategist (patch hu
+LOW-10. `plugins/djinn/agents/gate-auditor.md:95` "Not `git status`, which can rewrite the index" contradicts CONTRACTS.md:393 to :395 and proof-runner.md:135 to :137, which list `git status --porcela
+LOW-11. `plugins/djinn/CONTRACTS.md:56` "gate-auditor files LOW and MEDIUM on checks that exist", and no section 1 rule says HIGH for a gate. gate-auditor.md:251 to :254 defines a HIGH (the main gate 
+LOW-12. `plugins/djinn/commands/dispatch.md:235` In a `live` scope audit, the round fence is the union of work sets (dispatch.md:235 to :241), while CONTRACTS.md:154 to :156 makes the live fence "ever
+LOW-13. `plugins/djinn/commands/review.md:126` The custom-list guard added for proof-runner does not cover fixer, the other agent that executes project code with Edit and Bash (CONTRACTS.md:420 to :42
+LOW-14. `plugins/djinn/agents/multiuser-reviewer.md:108` The new handoff reads `data.invariants`. review.md:271 to :285 pastes the `data` block only to data-contract-reviewer, and the shared block (re
+LOW-15. `plugins/djinn/commands/dispatch.md:256` The round prompt gives devils-advocate no goal statement and no round patch. Hunt item 6, new in this build, walks "every hunk in the full patch" (devi
+LOW-16. `plugins/djinn/CONTRACTS.md:312` Stale prose the diff made false. The dispatch example ledger lines (CONTRACTS.md:314 to :315) carry neither `tokens=` nor `proof=`, which CONTRACTS.md:321 to :
+DEBT-1. `plugins/djinn/agents/synthesis.md:19` Every agent that adds an own section needs a hand edit to synthesis's list, and this build missed five (LOW-5) plus the Round sections (MEDIUM-1). A rule
+DEBT-2. `plugins/djinn/agents/gate-auditor.md:185` The hand-mutant grep lives in four places with four different patterns and scopes: review.md:212 (fenced files, tests excluded), gate-auditor.md:185 
+REC-1. integration-reviewer: add a CONTRACTS.md section on round n ownership (who writes status, who reports domain RESOLVED criteria, which paths each agent gets). MEDIUM-1 and LOW-15 both come from 
+REC-2. integration-reviewer: the live trigger (review.md:118 to :121) fires on a project's own browser benches. The game repo's tools/bench-page.mjs, tools/bench-studio.mjs and tools/bench-viewer.mjs impo
+REC-3. integration-reviewer: one integration test for the relay: a scripted dry run of review then dispatch round 2 on a fixture repo, asserting every agent's prompt carries each key its Inputs sectio
+== known-bugchecker
+MEDIUM-1. `plugins/djinn/agents/fixer.md:100` deep-equality-over-a-large-value (index entry has no tier), unverified.
+MEDIUM-2. `plugins/djinn/agents/proof-runner.md:138` hand-mutation-left-in-the-source (index entry has no tier), unverified.
+== security-reviewer
+HIGH-1. `plugins/djinn/commands/review.md:212` File names from the repo are typed into Bash command lines with no quoting rule. That covers the new tree preflight, the trigger greps, and the Bash of g
+MEDIUM-1. `plugins/djinn/agents/proof-runner.md:143` proof-runner runs project test code as the owner, and nothing tells the owner so or screens for it. The only caps are memory and time. Network, env
+MEDIUM-2. `plugins/djinn/agents/live-system-reviewer.md:141` The live reviewer is told to read captures and run logs from a third-party system, but its redaction rule covers only URLs, hostnames and k
+LOW-1. `plugins/djinn/agents/proof-runner.md:258` Failure output is copied verbatim into a committed report, with no redaction rule for secrets printed by the test.
+LOW-2. `plugins/djinn/commands/review.md:275` The `cost` block is pasted verbatim into agent prompts, and `paid_apis[].key` is grepped as a string, but nothing checks that `key` holds an env var name 
+LOW-3. `plugins/djinn/commands/review.md:415` The `review_copy` write path is built from config strings with no sanitizing. A system name holding `/` or `..` writes the report outside the named folder
+LOW-4. `plugins/djinn/CONTRACTS.md:410` The web rule lets dependency-reviewer search "public package names and versions from the manifest", but the manifest can hold private names, and the agent has n
+LOW-5. `plugins/djinn/agents/ux-reviewer.md:48` ux-reviewer holds WebFetch and WebSearch, but its own file carries no data-not-instructions or query-content sentence. cost-complexity-reviewer carries 
+DEBT-1. `plugins/djinn/CONTRACTS.md:388` The relay's only boundary between trusted and untrusted is the project config and the conventions files. But `.djinn/config.yaml` is itself repo content: `buil
+REC-1. gate-auditor.md:93 allows "`grep` or `rg` over the repo". `rg --pre <cmd>` and `--pre-glob` run a program on every file. Add: "Never pass `--pre`, `--pre-glob` or `-z`/`--search-zip` to rg."
+REC-2. CONTRACTS.md:403 to 405 says a page "that tells the agent to fetch" is ignored, but following a changelog link is ordinary. Add: "Following a link from a fetched page is allowed only to a host 
+REC-3. dispatch.md:160 to 162 (unchanged lines) put `<file>` into `git diff --no-index`. Apply HIGH-1's fix there too when that section is next edited.
+REC-4. templates/config.yaml:86 to 88: the `proof` comment should carry the MEDIUM-1 sentence ("runs as your user, with your environment, files and network"), so the owner reads it where the cap is se
+REC-5. A security test for the relay: a scratch repo with a tracked file named `a$(touch PWNED).md` and an untracked `b'x.mjs`, run through `/djinn:review quick`. The check passes when no `PWNED` file
+== ux-reviewer
+LOW-1. `plugins/djinn/templates/config.yaml:92` The template writes `none` and `[]` into three proof keys whose defaults only apply when the key is "absent", so a copied template can make proof-runner
+LOW-2. `plugins/djinn/templates/config.yaml:117` `first_live_run` asks Donald for a date that no rule reads.
+DEBT-1. `plugins/djinn/agents/live-system-reviewer.md:123` The six new agents each carry their own copy of the same five boilerplate blocks, so one rule change becomes seven edits, and each agent runs
+REC-1. `plugins/djinn/agents/gate-auditor.md:304` Put the verdict word first in the gate table and the proof table, so a row reads without scrolling to the far edge.
+REC-2. `plugins/djinn/agents/live-system-reviewer.md:373` Give "Before the first live run" a leading readiness word, and write a missing safety control as `MISSING`, not `none`.
+REC-3. `plugins/djinn/templates/config.yaml:66` The template does not say what makes the cost, gates and proof blocks work, so filling them in still means reading the agent files.
+REC-4. `plugins/djinn/README.md:139` README shows only the dispatch route to proof-runner. The case that created it, proving fixes that already landed by hand, goes through direct or index mode, which
+REC-5. `plugins/djinn/commands/review.md:157` Both refusals send the user to CONTRACTS.md section 5 when the copyable example lives in the template.
+REC-6. `plugins/djinn/relay.md:143` The `full` scope row is about 330 characters in one table cell. The Commands row for review (:218) is about 180.
+REC-7. `plugins/djinn/agents/data-contract-reviewer.md:206` Project names from Donald's other repos are written into a plugin published as general.
+REC-8. integration-reviewer: `plugins/djinn/CONTRACTS.md:295` gives the `review_copy` filename only as `<system name>`, while `commands/review.md:417` adds "or `live` when `live.systems` has several".
+REC-9. integration-reviewer: `plugins/djinn/agents/gate-auditor.md:95` forbids `git status` because it "can rewrite the index", while `plugins/djinn/agents/proof-runner.md:135 to 136` runs `git status

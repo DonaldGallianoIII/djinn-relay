@@ -21,14 +21,36 @@ known_bugs_index: .djinn/known-bugs.md
 # Files every agent reads before reviewing.
 conventions_files:
   - CLAUDE.md
+  # - ~/Conventions/code/LEGIBILITY.md   # legibility-reviewer's rule book
 
 # Directories where per-call cost matters (per tick, per frame, per
 # request). perf-reviewer traces call paths from here.
 hot_paths: []
 
+# Directories or globs that are UI whatever their file extension, such as
+# a module that only returns mark data for a renderer.
+# accessibility-reviewer treats every fenced file under one as a UI file.
+# Optional.
+ui_paths: []             # e.g. [src/viewer/, src/studio/]
+
 # Plan or spec the current diff claims to implement. devils-advocate and
 # test-strategist read it. "none" if there is no such document.
 goal_doc: none
+
+# Maps and entry docs beyond the defaults, for legibility-reviewer. Optional.
+# A path, or a path and a heading. The default map list, quoted from
+# CONTRACTS.md section 5 (maps), which is where it is kept: every
+# CLAUDE.md, AGENTS.md, CONTRIBUTING.md and README* in the tree, the
+# conventions files that list files, and any .md whose name contains index,
+# map, layout or contents.
+maps: []
+# e.g.
+#  - docs/INDEX.md
+#  - CLAUDE.md#Layout
+
+# Fenced files over this size, in KB, are listed in tree-facts.md. Optional;
+# "none" skips the size check.
+large_file_kb: none      # e.g. 1024
 
 # Dependency facts for dependency-reviewer. It runs whenever the fence
 # touches a manifest or lockfile listed here.
@@ -41,8 +63,127 @@ deps:
   coupled_sets: []       # packages that must move together
   landmines: []          # known bad version combinations, one line each
 
+# Checks and where their passes are recorded, for gate-auditor. Optional.
+# runs: gate (inside test_cmd or the check script), ci, or beside the gate
+# (run by a human). evidence: a stamp file the check writes on a clean run,
+# a ledger or doc that records runs, or a reference folder.
+gates: []
+# e.g.
+#  - name: qa:viewer
+#    cmd: npm run qa:viewer
+#    runs: beside the gate
+#    guards: [src/viewer/, src/sim/, tools/serve.mjs]
+#    evidence: qa/bot/reference/viewer/
+
+# What the code costs to run, for cost-complexity-reviewer. Optional; it
+# runs whenever any key here is set to something other than none. Every
+# price and limit carries an as_of date. No key ever holds a secret:
+# paid_apis key is where the key is read (an env var name), never its value.
+cost:
+  hosting: none          # e.g. "Azure App Service P1v3, Linux, 2 instances, East US"
+  load: none             # e.g. "500 requests a day, rows up to 4 million"
+  budget: none           # e.g. "50 USD a month, hard cap"
+  limits: []             # e.g. ["plan memory 3.5 GB, as_of 2026-01-01"]
+  paid_apis: []
+  # e.g.
+  #  - name: <service>
+  #    unit: <what is billed, e.g. task or 1M tokens>
+  #    price: <figure and currency, or none>
+  #    as_of: <YYYY-MM-DD, or none>
+  #    rate_limit: <figure, or none>
+  #    quota: <figure, or none>
+  #    key: <ENV_VAR_NAME>   # a location, never the value: capitals, digits and underscores only
+  pricing_refs: []       # official pricing URLs you trust
+
+# Caps for test runs. Optional. heap_mb and timeout_s also cap the fixer's
+# own test run; heap_mb and lane_timeout_s (or timeout_s when it is unset)
+# cap the dispatch landing lane. Without heap_mb the fixer runs no test and
+# the landing lane runs with no memory cap, and the dispatch plan says so.
+# When memory_wrapper and lane_mem_mb are both set, the wrapper, filled
+# with lane_mem_mb, also bounds the landing lane and the fixer's test runs.
+# Without both, those two read "heap cap only, resident memory unbounded",
+# never "capped". The lane runs test_cmd whole through bash -c from a
+# file, so a chained test_cmd (npm run build && npm test) stays capped.
+# proof-runner, the one agent that runs project code by itself, runs only
+# when you ask for it (/djinn:dispatch --prove, or by name), and it refuses
+# to run without heap_mb, timeout_s and memory_wrapper.
+# Each test file runs as your user, with your environment, files and
+# network. The caps bound memory and time, nothing else.
+# A none or [] below means absent: the key's default applies.
+proof:
+  heap_mb: none          # e.g. 4096. V8 heap cap in MB. Keep it at most half of the total `free -m` shows, and the resident cap (heap_mb times 2) too
+  timeout_s: none        # e.g. 120, wall seconds per test file
+  lane_timeout_s: none   # wall seconds for the whole-suite landing lane. Absent: the lane uses timeout_s, and the dispatch plan says so
+  memory_wrapper: none   # resident cap for every process a test starts; proof-runner fills {mem_mb} with heap_mb times 2
+  # e.g. systemd-run --user --scope -p MemoryMax={mem_mb}M -p MemorySwapMax=0
+  # That example needs a user systemd bus, which a WSL or container shell may lack.
+  # proof-runner probes the wrapper before any test: it must kill a Buffer
+  # allocation past {mem_mb}, or proof-runner refuses ("did not cap" or
+  # "did not start"). Dispatch probes it the same way with lane_mem_mb.
+  lane_mem_mb: none      # resident MB for the landing lane and the fixer's test runs, filled into {mem_mb}. You pick it; nothing picks it for you. Keep it at most half of the total `free -m` shows
+  harness_timeout_max_s: none   # the harness maximum Bash tool timeout, copied from its docs with URL and date
+  runner: none           # or a template with {heap_mb} and {file}, e.g. node --max-old-space-size={heap_mb} --test {file}
+  # runner and memory_wrapper may hold only: letters, digits, space and . _ / - = : , @ + { }
+  # with { } only in {file}, {heap_mb} or {mem_mb}. Never quote {file}: it is quoted for you.
+  # runner may not load other code (--import, --require, -r, --loader,
+  # --experimental-loader, --env-file, -c, -e, --eval).
+  setup_files: []        # setup files your runner's own config loads; each is screened like a test file
+  test_globs: []         # e.g. [tests/**/*.test.*]
+  max_files: none        # e.g. 10, most test files one run takes (at most 20)
+
+# Where data shapes live and the rules they keep, for
+# data-contract-reviewer. Optional.
+data:
+  paths: []              # e.g. [src/schema.js, content/**, db/**]
+  invariants: []         # e.g. ["Every table carries tenant_id."]
+  generated: {}          # committed file: the tool that writes it
+  # e.g.
+  #  content/registry.json: tools/build-registry.mjs
+
+# Real systems the code acts on, for live-system-reviewer and the live
+# scope. Optional; the live scope refuses to run without systems.
+live:
+  systems: []
+  # e.g.
+  #  - name: <what you call it>
+  #    kind: portal          # portal | api | database | machine
+  #    writes: true          # true if the tool creates or changes records there
+  #    code: [<files or dirs that act on it>]
+  #    match: [<hostname or URL prefix that marks a file as touching it>]
+  #    dry_run: none         # how the tool runs without writing
+  #    kill_switch: none     # how a run is stopped
+  #    dom_map: none         # dated capture map selectors come from
+  review_copy: none      # opt in: a folder inside your home, outside the live code, the live scope report is also copied to
+
+# For /djinn:learn, which turns an exam question into study material and
+# training data. Optional: without it, learn proposes each value from the
+# repo (its CLAUDE.md, README, schema docs, folder names) and waits for you
+# to say go. Every path is relative to the repo root. CONTRACTS.md section
+# 13 has the rules and two filled examples. The first run writes
+# <out_dir>/.gitignore holding "*", so run folders stay out of git; a run
+# stops before writing anything when git tracks a file under out_dir.
+learn:
+  sources: []            # what the fact checker may cite, e.g. [research/, docs/research/]
+  exclude: []            # never read as evidence (the input file, out_dir and audits/ always are)
+  item_shape: []         # schema docs, item tests and a real bank, e.g. [content/schema/quiz.md, tests/content.test.mjs]
+  banks: []              # every question bank the dedupe and leak checks read, e.g. [content/quizzes/]; a secure one makes every run secure
+  writing_rules: []      # e.g. [docs/ITEM-WRITING.md]
+  tiers: []              # your difficulty tiers in order, each a name and what it tests
+  # e.g.
+  #  - name: easy
+  #    tests: the mechanism, what happens and why
+  #  - name: hard
+  #    tests: spot the mistake in a spec, or make the call
+  scenarios: []          # settings items rotate through, each with the file its details come from
+  # e.g.
+  #  - name: clinic
+  #    where: docs/settings/clinic.md
+  secure_paths: []       # inputs from here never leave this repo; [.] for a private repo
+  holdout: []            # source question ids whose rows are eval rows, never train
+  out_dir: learn/        # must resolve inside the repo
+
 # Free text every agent reads as architecture context. State model, event
-# mechanism, render or request loop, anything a new reviewer needs. Keep it
-# under 40 lines; link to a doc for more.
+# mechanism, render or request loop, anything a new reviewer needs. Link to
+# a doc for detail.
 project_notes: |
   none

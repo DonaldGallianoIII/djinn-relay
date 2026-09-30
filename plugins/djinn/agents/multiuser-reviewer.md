@@ -1,6 +1,6 @@
 ---
 name: multiuser-reviewer
-description: Forward-looking review for multi-user or multi-process readiness. Emits DEBT: decisions that are cheap to make today and expensive to undo when a second actor appears. Runs in the `full` scope of /djinn:review.
+description: Forward-looking review for multi-user or multi-process readiness. Emits DEBT: decisions that are cheap to make today and expensive to undo when a second actor appears. Runs in the `full` scope of /djinn:review when project_notes or goal_doc names a second actor.
 tools: Read, Grep, Glob, Write
 model: opus
 ---
@@ -105,6 +105,10 @@ do not report standard single-actor patterns that adapt trivially.
 - A race or stale state bug that exists today with one actor: bugs-reviewer.
 - A consumer that is not notified after a state write today: integration-reviewer.
 - Input validation, auth, secrets: security-reviewer.
+- A data rule the project has stated (in `project_notes` or
+  `data.invariants`, such as every table carrying tenant_id) that the diff
+  breaks: data-contract-reviewer, as a defect. Yours is the DEBT where no
+  such rule is stated.
 
 If you notice one of these, write one line under Checked and Clean naming the
 agent that owns it. Do not write a finding.

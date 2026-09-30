@@ -88,7 +88,7 @@ Why: Decision 5 says every command appends one ledger line so no run goes unlogg
 **4. Project-specific paths and file names leak into every dispatch** (line 52, line 68, line 90, line 92)
 Current: "read the project's CLAUDE.md and the bugs_to_avoid index" (52), "read CLAUDE.md and bugs_to_avoid.md" (68), "proposes additions to `bugs_to_avoid.md`" (90, 92)
 Proposed: In Step 3 item 1, also read from the config: `known_bugs_index` (path), `build_cmd` (string, may be `none`), `conventions_files` (list). Replace lines 52 and 68 with: "Instruction: the known-bugs index is at `<known_bugs_index>`; read it and any file it links." Replace `bugs_to_avoid.md` on lines 90 and 92 with "the known-bugs index at `<known_bugs_index>`". Add to the Fence block: "Project conventions: <conventions_files>."
-Why: Decision 2 moves every project-specific name into the per-project config. `bugs_to_avoid.md` is a GameEngine memory file with a hardcoded home-directory path in `agents/known-bugchecker.md` line 10; a second project has no such file and the agents will either invent one or report it missing. The command is where the config is read, so it is the one place that can hand agents a real path.
+Why: Decision 2 moves every project-specific name into the per-project config. `bugs_to_avoid.md` is an engine repo memory file with a hardcoded home-directory path in `agents/known-bugchecker.md` line 10; a second project has no such file and the agents will either invent one or report it missing. The command is where the config is read, so it is the one place that can hand agents a real path.
 
 **5. Model is never named on any dispatch** (line 49, line 61, line 77, line 90)
 Current: "Use the Agent tool with `subagent_type: "known-bugchecker"`" and equivalents

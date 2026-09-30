@@ -19,15 +19,15 @@ Current: `tools: Read, Grep, Glob`
 Proposed: Keep the tool list. Add one line under Output format: "Return the full report as your final message. The orchestrator writes it to `<AUDIT_DIR>/agents/known-bugchecker.md`. Do not attempt to write files." And in `commands/review.md` step 4, change "write report to" to "orchestrator saves the returned report to".
 Why: `review.md` line 53 instructs the agent to write its report to disk, but the frontmatter denies Write. On Claude Code the agent either fails or improvises. `consolidator.md` line 12 already uses the return-and-orchestrator-writes pattern; copy it. This mismatch exists in every review agent (all are `Read, Grep, Glob`), so fix it once in the command and once here, not by adding Write to fifteen frontmatters.
 
-**3. Hardcoded GameEngine memory path** (line 10)
-Current: "Read the bugs_to_avoid index at `~/.claude/projects/-home-donaldgalliano-GameEngine/memory/bugs_to_avoid.md`."
+**3. Hardcoded the engine repo memory path** (line 10)
+Current: "Read the bugs_to_avoid index at `~/.claude/projects/<project folder>/memory/bugs_to_avoid.md`."
 Proposed: "Your dispatch names the known-bugs index path (from the project config). Read it. For each entry, read its linked detail file. If the dispatch gives no path, or the file does not exist, output `## Index: NOT FOUND at <path>` followed by `## Patterns Checked: 0/0` and stop. Do not search the filesystem for an index."
 Why: Decision 2 moves every project-specific path into per-project config. The current line makes the agent useless on any other repo and, worse, on a fresh machine it will Glob around looking for the file, which is a fence violation (decision 1). `bugs-reviewer.md` line 10 already has "if it exists" handling; this prompt has none.
 
 **4. Delete the inline pattern list; the index is the only source** (lines 19 to 25)
 Current: seven bullets from "Per-frame allocations" through "Unmanaged observers", naming `onBeforeRenderObservable`, `splatData.set()`, `updateSplatMap()`, `syncFromState()`.
 Proposed: delete all seven bullets. Replace step 3 with: "For each changed file, for each index entry: run the entry's search signature (the grep or the file-region rule written in its detail file). Do not check patterns that are not in the index. Do not skip patterns that are."
-Why: The list is Babylon and GameEngine specific (decision 2). It also duplicates the index, and a copy drifts: an agent given both will check these seven and treat the index as background reading, so `Patterns Checked: N/N` on line 47 becomes meaningless because nobody knows which N. A new developer at Donald's workplace reading "recomposite" or "splatData" will not know whether it applies to their repo.
+Why: The list is Babylon and the engine repo specific (decision 2). It also duplicates the index, and a copy drifts: an agent given both will check these seven and treat the index as background reading, so `Patterns Checked: N/N` on line 47 becomes meaningless because nobody knows which N. A new developer at Donald's workplace reading "recomposite" or "splatData" will not know whether it applies to their repo.
 Hook needed elsewhere: each index entry needs a machine-usable search signature field. Flag for the per-project config and the consolidator's "New patterns to add" template (`consolidator.md` line 32 to 36 has What, Why, Prevention, Source, but no grep signature).
 
 **5. `KNOWN-HIGH` tags do not exist in synthesis, and severity is defined on a different basis** (lines 28 to 32, 39, 42)

@@ -10,12 +10,12 @@ Also read: `relay.md`, `commands/review.md`, `commands/brief.md`, `agents/fixer.
 
 Context that shapes the ranking: this prompt is consumed by three things. `commands/brief.md` step 3 mines it for `work_set.files` and symbol lists. `agents/fixer.md` step 2 reads its "blast-radius section" (a section name that does not exist in the template). `agents/synthesis.md` reads every report under `agents/` and ranks by `[SEVERITY]`. The prompt as written serves none of those three cleanly.
 
-**1. The whole Shared Context block is GameEngine, not a plugin prompt** (line 3, lines 8 to 27, also 93, 96 to 99, 114, 280)
+**1. The whole Shared Context block is the engine repo, not a plugin prompt** (line 3, lines 8 to 27, also 93, 96 to 99, 114, 280)
 Current: "Read `docs/ARCHITECTURE.md` for the full spec, and `src/core/EditorState.ts` + `src/core/types.ts` + `src/core/constants.ts`..." and the alias list `@terrain/`, `@objects/`, `@camera/`...
 Proposed: Replace lines 8 to 27 with:
 "Read the project config's `wiring` section. It names, for this project: the module system and import syntax; path aliases; the shared-state object(s), if any; the event or observer mechanism(s); the string-keyed lookups that cross files (element ids, resource names, registry keys); the asset imports that cross files (shaders, templates, data files); the style directory; and the file-size threshold (default 500). If the config has no `wiring` section, say so at the top of your report and trace the generic edge kinds below using whatever import syntax the target file uses."
 Then keep lines 20 to 27 as the generic list of edge kinds, with each bullet reworded without the Babylon and EditorState names (Exports, Imports, Events, Shared state, Resource lifecycle, String-keyed lookups, Asset imports). Rewrite line 3 to match: "Maps incoming and outgoing connections for a file: exports and importers, imports, event edges, shared-state coupling, resource create/dispose pairs, string-keyed lookups. Invoke before splitting a file past the project's size threshold."
-Why: Decision 2. As written, every named file and alias is a hard read instruction that fails on any project other than GameEngine, and the agent will spend its first minutes grepping for `EditorState` in a Python repo. Sections 4, 5, 6, 7 of Scope then have to be re-labelled the same way (state coupling, resource coupling, string-key coupling, asset coupling) or they read as GameEngine-only.
+Why: Decision 2. As written, every named file and alias is a hard read instruction that fails on any project other than the engine repo, and the agent will spend its first minutes grepping for `EditorState` in a Python repo. Sections 4, 5, 6, 7 of Scope then have to be re-labelled the same way (state coupling, resource coupling, string-key coupling, asset coupling) or they read as the engine repo-only.
 
 **2. No fence, and no way for synthesis to tell this agent's reads from drift** (lines 35 to 40, line 50, whole prompt)
 Current: no mention of a file list, a fence, or which files are in scope. "For the target file" is used throughout without saying where the target comes from.
@@ -71,9 +71,9 @@ Proposed: Add: "Every importer claim carries a `file:line` from a grep hit. Ever
 Why: The section says the right things but a claim of "0 importers found" is only checkable if the reader knows what was searched. Listing the patterns turns "trust me" into "re-run this."
 
 **11. The worked example is half the file** (lines 135 to 282, 148 of 286 lines)
-Current: a full GameEngine `TerrainSculptingTool` report with invented line numbers, aliases, and shader names.
+Current: a full the engine repo `TerrainSculptingTool` report with invented line numbers, aliases, and shader names.
 Proposed: Cut the template to a skeleton of section headings with one placeholder line each (about 50 lines). Keep the three shapes that matter for consumers: an export entry with importer `file:line` list, the region table (line 240 to 247), and the split-candidate table (line 256 to 261). Move the worked example into `templates/pipe-connector-example.md` if the owner wants to keep it, or into the per-project config.
-Why: The example teaches the agent GameEngine vocabulary it is supposed to forget (decision 2), and every section of it duplicates the Scope list at lines 42 to 119. Prompt length costs cache and attention on every dispatch.
+Why: The example teaches the agent the engine repo vocabulary it is supposed to forget (decision 2), and every section of it duplicates the Scope list at lines 42 to 119. Prompt length costs cache and attention on every dispatch.
 
 **12. Em dashes in the template get copied into audit files** (lines 31, 42, 64 to 67, 159 to 161, 182, 185, 188, 193 to 201, 206 to 208, 216 to 217, 224 to 225, 229 to 231, 264, 274 to 281)
 Current: the output template uses an em dash as the separator on nearly every line, e.g. "`state.activeBrush` — lines 145, 298, 412".
@@ -102,5 +102,5 @@ The Role statement is sharp. Sections 1, 2 and 8 are the right categories and ne
 
 Summary
 Keep 4 sections, change 12, delete 0 (item 11 shrinks the template rather than deleting it).
-Most important change: item 1, rewrite Shared Context and the description as project-agnostic with a config hook; every other item is moot until the prompt runs on a project that is not GameEngine.
+Most important change: item 1, rewrite Shared Context and the description as project-agnostic with a config hook; every other item is moot until the prompt runs on a project that is not the engine repo.
 Second: items 3 and 4 together, so synthesis can consume the report without mistaking "HIGH RISK" for a HIGH finding.

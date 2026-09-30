@@ -32,7 +32,7 @@ The rewritten file must:
 
 - Keep the frontmatter shape: `name`, `description`, `tools`, `model`.
   `model: opus`. Tools per CONTRACTS.md section 9.
-- Be project-agnostic. No GameEngine, Babylon, EditorState, Vite, JAX,
+- Be project-agnostic. No the engine repo, Babylon, EditorState, Vite, JAX,
   djinnax, CUDA, pip, npm, or hardcoded paths. Where the old prompt needed
   a project fact, say the agent gets it from the config values pasted into
   its prompt (`build_cmd`, `hot_paths`, `known_bugs_index`,

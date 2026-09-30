@@ -41,17 +41,30 @@ looking for an index somewhere else.
 
 # Process
 
-1. Read the index at the pasted path. Count its entries. That count is the
-   denominator in `patterns checked: N/N`.
-2. Read every detail file the index links. Each entry should give you a stable
-   pattern id, a tier word, a search signature (a grep or a file-region rule),
+1. Read the index at the pasted path. It is sorted by language, then bug
+   type: `## <language>` headings, a `### <bug type>` line under each linking
+   its file (`known-bugs/<language>/<bug-type>.md`), and the entry titles that
+   file holds. A small project index may hold its entries itself under the
+   same headings; treat each of its `## <language>` sections as that
+   language's folder. It may also link another index; follow that link and
+   apply the same rules to it.
+2. Pick the language folders to read. Always read every `any-language` file.
+   Read every file of a language folder that matches a language present in
+   the fence, judged by file extension (`.js`, `.mjs`, `.cjs`, `.jsx`, `.ts`,
+   `.tsx` and a `.html` with a script in it match `javascript`; `.ts` and
+   `.tsx` match `typescript`). A language folder with no matching file in the
+   fence may be skipped. Name each skipped folder and why on the Index
+   section's `skipped:` line. Count the entries in every file you read. That
+   count is the denominator in `patterns checked: N/N`.
+3. Read every file picked in step 2. Each entry should give you a stable
+   pattern id, a `Tier when hit:` line, a search signature (a grep or a file-region rule),
    the trigger condition, and the guard that makes the pattern safe.
-3. For each changed file, for each index entry, run that entry's search
+4. For each changed file, for each entry you read, run that entry's search
    signature. Do not check patterns that are not in the index. Do not skip
-   patterns that are.
-4. Verify each hit as below, then record the file, the line number, the
+   patterns in a file you read.
+5. Verify each hit as below, then record the file, the line number, the
    pattern id, and the offending line quoted.
-5. Give every fenced file a Checked and Clean line, and every entry that ran
+6. Give every fenced file a Checked and Clean line, and every entry that ran
    clean a Checked and Clean line. Synthesis uses these to prove no changed
    file went uncovered.
 
@@ -75,7 +88,10 @@ before synthesis treats it as real.
 
 # Tier
 
-Copy the tier word from the index entry. Do not re-rate it. Only these five
+Copy the tier word from the entry's `Tier when hit:` line. Do not re-rate
+it. That tier is a floor (CONTRACTS.md section 1, known-bugs floor): it was
+set from what the pattern actually did when it was caught, and only
+synthesis may file a match below it, with a cited reason. Only these five
 words are allowed, and the bar for each, in your terms, is:
 
 - `HIGH`: the pattern has caused a crash, data loss or corruption, or security
@@ -87,8 +103,9 @@ words are allowed, and the bar for each, in your terms, is:
   defect today.
 - `REC`: the entry is a recommendation, not a defect.
 
-If an entry carries no tier, use `MEDIUM` and add `(index entry has no tier)`
-after the pattern id. Number findings within each tier: `HIGH-1`, `HIGH-2`,
+If an entry has no `Tier when hit:` line, say so: use `LOW` and add
+`(index entry has no tier)` after the pattern id, so the owner sees which
+entries still need one. Number findings within each tier: `HIGH-1`, `HIGH-2`,
 `MEDIUM-1`, and so on.
 
 # The fence
@@ -109,13 +126,12 @@ If a hit somehow lands on a file outside the fence, it goes under a
 `## Blast radius` section between Findings and Checked and Clean, never under
 Findings. Do not report pre-existing problems in unchanged files as findings.
 
-# Round 2
+# Round 2 and later
 
-If your dispatch says Round 2, do this first: re-check every finding in the
-Round 1 known-bugchecker report at its file and line, and report each as
-`RESOLVED` or `STILL PRESENT` with the current line, under a
-`## Round 1 recheck` section placed directly before Findings. Then run the
-normal check on the Round 2 changed-file list.
+In round `n`, run the normal check on this round's changed-file list and
+the fix diffs, and file new hits. Do not write a status or recheck section
+and do not mark round `n-1` findings RESOLVED; synthesis owns that
+(CONTRACTS.md section 3).
 
 # Output
 
@@ -133,6 +149,7 @@ status: audit finding, not yet deliberated
 
 ## Index
 path: <index path>, entries: <N>, patterns checked: <N>/<N>
+skipped: <language folder> (no <extensions> file in the fence), or none
 
 ## Flagged
 - <pattern-id> path/to/file.ext:123

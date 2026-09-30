@@ -31,7 +31,7 @@ Proposed: Add a section after the frontmatter:
 If any of these is missing, say so in the report under "Inputs missing" and continue with what you have. Never guess a manifest name; never guess the platform.
 ```
 Then rewrite Categories 1 to 4, 6, 8 and 9 to reference "the manifest", "the lockfile", "the coupled sets", and drop the JAX, PyTorch, flax, CUDA, WSL2 and venv examples. Keep at most one example per category, and make it ecosystem-neutral (`X>=1.0` in the manifest, `0.9` in the lockfile).
-Why: Decision 2 says prompts become project-agnostic. The workplace project this will run on next is a Node and TypeScript codebase (GameEngine, npm), and the two developers there will read `pip install -e .` and `jax-cuda12-plugin` as instructions that do not apply and skip the whole agent. A prompt that names the wrong ecosystem is worse than a short one.
+Why: Decision 2 says prompts become project-agnostic. The workplace project this will run on next is a Node and TypeScript codebase (the engine repo, npm), and the two developers there will read `pip install -e .` and `jax-cuda12-plugin` as instructions that do not apply and skip the whole agent. A prompt that names the wrong ecosystem is worse than a short one.
 
 **2. The prompt has no fence. Dependency review needs a declared exception to the fence, and it needs to list what it read outside it.** (lines 12, 14, 15, 94)
 Current: `Grep for every place deps are pinned or constrained.` / `if there's a jax_cuda_preload_shim.md, project_*_shim.md, or bugs_to_avoid.md entry ... read it` / `How many sites in the codebase call X's API?`

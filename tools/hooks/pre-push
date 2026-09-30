@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# The pre-push hook for `git config core.hooksPath tools/hooks`: runs
+# tools/pre-push.sh with the same stdin and arguments.
+#
+# @interacts  passes stdin to tools/pre-push.sh
+# @deps       bash, git
+# @complexity O(tools/pre-push.sh)
+# @alloc      none
+exec bash "$(git rev-parse --show-toplevel)/tools/pre-push.sh" "$@"

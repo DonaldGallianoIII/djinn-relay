@@ -1,0 +1,371 @@
+diff --git a/.djinn/config.yaml b/.djinn/config.yaml
+index c992656..b2f03f7 100644
+--- a/.djinn/config.yaml
++++ b/.djinn/config.yaml
+@@ -3,6 +3,9 @@
+ # commands, agents and CONTRACTS.md for contradictions, broken references,
+ # and instructions an agent would misread.
+ 
++# This repo has no main yet, and this is the branch the work happens on, so a
++# plain /djinn:review would compare the branch with itself and see only
++# uncommitted work. Always pass --base <commit before the change>.
+ base_branch: Claude-Development-djinn-relay
+ 
+ build_cmd: none
+diff --git a/plugins/djinn/CONTRACTS.md b/plugins/djinn/CONTRACTS.md
+index fd288f4..e169d0d 100644
+--- a/plugins/djinn/CONTRACTS.md
++++ b/plugins/djinn/CONTRACTS.md
+@@ -313,7 +313,8 @@ Fields:
+     word that claims a fix happened: RESOLVED, REGRESSED or FIXED.
+ - `prior` (round 2 and later; `[]` in round 1): one record per row of this
+   round's status table. `id` and `round` name the finding as it was
+-  raised. `status` is exactly `RESOLVED`, `NOT RESOLVED` or `REGRESSED`.
++  raised, from any earlier round. `status` is exactly `RESOLVED`,
++  `NOT RESOLVED` or `REGRESSED`.
+ - `open`: every HIGH, MEDIUM and LOW still open after this round, across
+   all rounds, each keeping the `id` and `round` it was raised with. An
+   entry carries the finding's fields plus `round` and `status`, in the
+@@ -323,13 +324,21 @@ Fields:
+   - Round `n`: the prior round's `open`, minus every entry this round marks
+     RESOLVED; an entry marked NOT RESOLVED takes `status: "not-resolved"`,
+     one marked REGRESSED takes `status: "regressed"`, and an entry this
+-    round did not check keeps its status. Then this round's HIGH, MEDIUM
+-    and LOW findings are added with `status: "open"`.
++    round did not check keeps its status. Every open HIGH and MEDIUM is
++    checked every round; an open LOW is checked only in the round after its
++    fix lands. Then this round's HIGH, MEDIUM and LOW findings are added
++    with `status: "open"`.
++  - The verdict agrees with `open`: FIX THEN SHIP exactly when `open` holds
++    a HIGH or MEDIUM.
+   - DEBT and REC are never in `open`: they do not block and are not defects.
+   - If the prior round has no `findings.json` (an audit from before this
+     section), synthesis rebuilds the prior open list from the prior
+     `synthesis.md` Fix List and status table, and says so in the Coverage
+-    section of `synthesis.md`: `open list rebuilt from prose`.
++    section of `synthesis.md`: `open list rebuilt from prose`. The
++    rebuild sees only what the prose names, so a round 1 LOW that no later
++    synthesis mentions can be lost from an audit begun before this section
++    existed. Audits begun on 2.2.0 or later carry `open` forward and lose
++    nothing.
+ 
+ A finding is identified by `(round, id)`, never by `id` alone: round 2's
+ MEDIUM-1 is a different finding from round 1's MEDIUM-1. A reader shows
+diff --git a/plugins/djinn/README.md b/plugins/djinn/README.md
+index 0e69467..bdde576 100644
+--- a/plugins/djinn/README.md
++++ b/plugins/djinn/README.md
+@@ -28,7 +28,8 @@ Or, from a local checkout while developing the plugin itself:
+ ```
+ 
+ Restart Claude Code after installing. The commands `/djinn:review`,
+-`/djinn:brief`, and `/djinn:dispatch` now exist in every project.
++`/djinn:brief`, `/djinn:dispatch` and `/djinn:status` now exist in every
++project.
+ 
+ ## Set up a project
+ 
+@@ -148,7 +149,8 @@ it and whether a human has reviewed it yet. Trust the `status` line.
+ - Fixers edit only the files in the brief's work set. Anything else stops
+   the fixer and asks you.
+ - A fix is not landed until its report is on disk.
+-- Every command writes a ledger line, even when it stops early.
++- Every command that writes to `audits/` also writes a ledger line, even
++  when it stops early. `/djinn:status` writes nothing.
+ - Everything runs on Opus. No exceptions.
+ - Three review rounds maximum, then a human decides.
+ 
+diff --git a/plugins/djinn/agents/bugs-reviewer.md b/plugins/djinn/agents/bugs-reviewer.md
+index c34cfb3..6f1576d 100644
+--- a/plugins/djinn/agents/bugs-reviewer.md
++++ b/plugins/djinn/agents/bugs-reviewer.md
+@@ -14,7 +14,7 @@ dispatch prompt pastes four things:
+ 2. The config values for this project: `known_bugs_index`, `conventions_files`,
+    `project_notes`, `goal_doc`, `hot_paths`, `build_cmd`, `deps.*`.
+ 3. The report output path. You write exactly one file, there.
+-4. In Round 2 only: the path to the Round 1 synthesis.
++4. In round 2 and later only: the path to the prior round's synthesis.
+ 
+ An adapter for another runner must supply those four. Never guess a path, a
+ branch, or an index location that the prompt did not give you.
+@@ -91,13 +91,13 @@ tier word decides everything.
+ No finding at any tier without a traced path. "Could be a problem" is a LOW at
+ most, and only when you can point at the line.
+ 
+-# Round 2
++# Round 2 and later
+ 
+-When the dispatch says you are in Round 2, read the Round 1 synthesis it names
++When the dispatch says this is round 2 or later, read the prior round's synthesis it names
+ and add one section immediately before `## Findings`:
+ 
+ ```markdown
+-## Round 1 re-check
++## Round <n-1> re-check
+ - HIGH-1: RESOLVED, checked `path/to/file.ext:120`
+ - MEDIUM-2: STILL OPEN, checked `path/to/other.ext:44`
+ ```
+diff --git a/plugins/djinn/agents/consolidator.md b/plugins/djinn/agents/consolidator.md
+index bdcbbb1..f8467d0 100644
+--- a/plugins/djinn/agents/consolidator.md
++++ b/plugins/djinn/agents/consolidator.md
+@@ -40,7 +40,7 @@ exists. No finding has a disposition. Treat every HIGH and MEDIUM as a
+ candidate, label each `disposition unknown`, and say on your first line that
+ these are candidates from an unfixed run.
+ 
+-`post-dispatch` runs after a dispatch completes and Round 2 synthesis is on
++`post-dispatch` runs after a dispatch completes and that round's synthesis is on
+ disk. Dispositions are real, and that round's `## Round <n-1> status` table
+ (and its `findings.json` `prior` list) says which findings resolved. A candidate whose fix landed and shows RESOLVED is
+ a stronger entry than one nobody touched. Say which kind each proposal is.
+diff --git a/plugins/djinn/agents/integration-reviewer.md b/plugins/djinn/agents/integration-reviewer.md
+index 862c985..75e8530 100644
+--- a/plugins/djinn/agents/integration-reviewer.md
++++ b/plugins/djinn/agents/integration-reviewer.md
+@@ -155,13 +155,14 @@ none
+ Number findings within each tier: `HIGH-1`, `HIGH-2`, `MEDIUM-1`. Synthesis
+ assigns its own ids after merging.
+ 
+-# Round 2
++# Round 2 and later
+ 
+-When your dispatch says Round 2, open the Round 1 report at the path given. Add
+-this section above `## Findings`, one line per Round 1 finding of yours:
++When your dispatch says this is round `n` (2 or more), open the round `n-1`
++report at the path given. Add this section above `## Findings`, one line per
++round `n-1` finding of yours:
+ 
+ ```markdown
+-## Round 1 re-check
++## Round <n-1> re-check
+ - HIGH-1: RESOLVED. `path/to/file.ext:88` now calls the refresh path.
+ - MEDIUM-2: NOT RESOLVED. `path/to/other.ext:41` still reads the old shape.
+ ```
+diff --git a/plugins/djinn/agents/known-bugchecker.md b/plugins/djinn/agents/known-bugchecker.md
+index 1c119e0..24c253a 100644
+--- a/plugins/djinn/agents/known-bugchecker.md
++++ b/plugins/djinn/agents/known-bugchecker.md
+@@ -109,13 +109,14 @@ If a hit somehow lands on a file outside the fence, it goes under a
+ `## Blast radius` section between Findings and Checked and Clean, never under
+ Findings. Do not report pre-existing problems in unchanged files as findings.
+ 
+-# Round 2
+-
+-If your dispatch says Round 2, do this first: re-check every finding in the
+-Round 1 known-bugchecker report at its file and line, and report each as
+-`RESOLVED` or `STILL PRESENT` with the current line, under a
+-`## Round 1 recheck` section placed directly before Findings. Then run the
+-normal check on the Round 2 changed-file list.
++# Round 2 and later
++
++If your dispatch says this is round `n` (2 or more), do this first:
++re-check every finding in the round `n-1` known-bugchecker report at its
++file and line, and report each as `RESOLVED` or `STILL PRESENT` with the
++current line, under a `## Round <n-1> recheck` section placed directly
++before Findings. Then run the normal check on this round's changed-file
++list.
+ 
+ # Output
+ 
+diff --git a/plugins/djinn/agents/security-reviewer.md b/plugins/djinn/agents/security-reviewer.md
+index 1258085..3e83c13 100644
+--- a/plugins/djinn/agents/security-reviewer.md
++++ b/plugins/djinn/agents/security-reviewer.md
+@@ -128,10 +128,10 @@ Rules you do not bend:
+ - Synthesis re-rates any finding whose text misses its bar. Write the trace so it
+   does not have to.
+ 
+-# Round 2
++# Round 2 and later
+ 
+-If the dispatch says this is Round 2, begin the report with a "## Round 1
+-status" section, placed before "## Findings": one line per prior HIGH or MEDIUM
++If the dispatch says this is round `n` (2 or more), begin the report with a
++"## Round <n-1> status" section, placed before "## Findings": one line per prior HIGH or MEDIUM
+ finding, marked RESOLVED, NOT RESOLVED, or REGRESSED, with the file:line that
+ proves it. A diff glance is not proof; re-trace the path. Then review the fix
+ diff as normal.
+diff --git a/plugins/djinn/agents/synthesis.md b/plugins/djinn/agents/synthesis.md
+index 4ea6700..17e8e48 100644
+--- a/plugins/djinn/agents/synthesis.md
++++ b/plugins/djinn/agents/synthesis.md
+@@ -67,9 +67,14 @@ You are the synthesis agent. Four jobs, in order:
+ You also receive the prior round's synthesis, its `findings.json` when one
+ exists, and every `fixes/<id>.diff`. Produce the status table first, headed
+ `## Round <n-1> status`, where `n` is this round: round 2's table is
+-`## Round 1 status`, round 3's is `## Round 2 status`. One row per
+-prior-round HIGH and MEDIUM, plus one per prior-round LOW whose fix landed
+-(it has a `fixes/<id>.diff`). Status is exactly RESOLVED, NOT RESOLVED, or
++`## Round 1 status`, round 3's is `## Round 2 status`. One row per HIGH and
++MEDIUM in the prior round's open list, whatever round raised it (from its
++`findings.json` `open`, or, without one, the prior synthesis's HIGH and
++MEDIUM), plus one per open LOW whose fix landed in this dispatch. A fix
++belongs to the finding whose folder holds its diff: `fixes/LOW-1.diff` in
++the audit folder is round 1's LOW-1, `round-2/fixes/LOW-1.diff` is round
++2's. Each row names the round that raised the finding. Status is exactly
++RESOLVED, NOT RESOLVED, or
+ REGRESSED, each verified by reading the diff and the file, not the fixer's
+ report. A partial fix is NOT RESOLVED, with what remains in the evidence
+ column: a reader treats the first cell as the verdict and nothing else.
+@@ -81,6 +86,10 @@ The table has exactly one row per prior finding and nothing else: no
+ status cell. If no prior finding needed a row, write the heading and the
+ single line `none` under it instead of a table.
+ 
++A finding that stays open keeps coming back to this table every round
++until a round marks it RESOLVED. That is how a round 1 MEDIUM left NOT
++RESOLVED in round 2 is checked again in round 3.
++
+ # Output
+ 
+ Write exactly two files for your round: `synthesis.md` and
+@@ -89,9 +98,11 @@ Write exactly two files for your round: `synthesis.md` and
+ `synthesis.md` starts with the attribution header from CONTRACTS.md
+ section 7, `status: agent output, not yet deliberated`, then the shape
+ below. In round 1, leave out the `## Round <n-1> status` section entirely;
+-from round 2 on, `<n-1>` is the prior round's number written as a digit.
+-The Prior id cell holds only the bare id (`LOW-1`, never `LOW-1 (briefed)`),
+-and the Status cell holds only RESOLVED, NOT RESOLVED or REGRESSED.
++that is the one exception to "every section is present". From round 2 on,
++`<n-1>` is the prior round's number written as a digit. The Round cell is
++the number of the round that raised the finding, the Prior id cell holds
++only the bare id (`LOW-1`, never `LOW-1 (briefed)`), and the Status cell
++holds only RESOLVED, NOT RESOLVED or REGRESSED.
+ 
+ ```markdown
+ scope: <scope>
+@@ -101,7 +112,7 @@ agents missing: <list or none>
+ changed files in fence: <N>
+ 
+ ## Round <n-1> status
+-| Prior id | Status | Evidence |
++| Round | Prior id | Status | Evidence |
+ 
+ ## Fix List
+ 
+@@ -144,7 +155,8 @@ Open across rounds: HIGH <n>, MEDIUM <n>, LOW <n>
+ <one line naming the ids that block, if any>
+ ```
+ 
+-Every section is present even when empty; write `none`.
++Every section is present even when empty; write `none`. The one exception
++is the status section in round 1, which is left out.
+ 
+ Then write `findings.json` exactly as CONTRACTS.md section 12 specifies.
+ Build it from the `synthesis.md` you just wrote, never from the agent
+@@ -176,12 +188,15 @@ Decide mechanically, in this order:
+ 1. **ESCALATE** if any HIGH or MEDIUM finding is in an unresolved fact
+    dispute, or a HIGH citation failed verification and you cannot tell
+    whether the defect exists elsewhere.
+-2. **FIX THEN SHIP** if any HIGH or MEDIUM remains after normalization. Name
+-   the ids that block.
++2. **FIX THEN SHIP** if any HIGH or MEDIUM is in `open` after this round:
++   one in this round's Fix List after normalization, or one carried from an
++   earlier round and not marked RESOLVED in your status table. Name the ids
++   that block, with `R<round>` before any id from a round above 1.
+ 3. **SHIP** otherwise.
+ 
+-SHIP means: nothing in this round blocks a merge to the base branch. LOW,
+-DEBT, and REC never affect the verdict.
++SHIP means: nothing open blocks a merge to the base branch, in this round
++or carried from an earlier one. LOW, DEBT, and REC never affect the
++verdict.
+ 
+ # What you do NOT do
+ 
+diff --git a/plugins/djinn/commands/dispatch.md b/plugins/djinn/commands/dispatch.md
+index d512b09..65c44c4 100644
+--- a/plugins/djinn/commands/dispatch.md
++++ b/plugins/djinn/commands/dispatch.md
+@@ -175,12 +175,16 @@ line again and continue.
+ 
+ After all batches land:
+ 
+-1. **Round number.** Round = 1 + the count of `round-` segments in the
+-   audit-folder path. If it would be 4 or more, do not spawn. Report
+-   `Max 3 rounds reached. Stop and deliberate.` and go to Step 8.
+-   Create `<audit-folder>/round-<n>/agents/`. Never nest
+-   `round-2/round-2/`; the round folder always sits directly under the
+-   original audit folder.
++1. **Round number.** Find the original audit folder: the brief's audit
++   folder, or the folder above it when that is a `round-<k>` folder. Round
++   = 1 + the highest `<k>` among the `round-<k>/` folders directly under
++   it, or 2 when there are none. This holds wherever the briefs live: a
++   brief written against `round-1`'s or `round-2`'s findings still leads
++   to the next round, never an existing one. If the round would be 4 or
++   more, do not spawn. Report `Max 3 rounds reached. Stop and deliberate.`
++   and go to Step 8. Create `<audit-folder>/round-<n>/agents/` under the
++   original audit folder. Never nest `round-2/round-2/`, and never write
++   into a round folder that already exists.
+ 
+ 2. **Landing lane.** If `test_cmd` is configured, run it once, at the repo
+    root, and save the output to `<audit-folder>/round-<n>/test-output.txt`.
+@@ -213,13 +217,18 @@ After all batches land:
+    paths, the round fence, the prior round's synthesis path and its
+    `findings.json` path (the audit folder's own for round 2,
+    `round-<n-1>/` after that; say "none" if that file does not exist),
+-   every `fixes/<id>.diff`, the test output path if any, and: "This is
++   every landed diff by its full path (`fixes/LOW-1.diff` in the audit
++   folder is round 1's, `round-2/fixes/LOW-1.diff` round 2's), the test
++   output path if any, and: "This is
+    round <n>. Produce the `## Round <n-1> status` table first, verified by
+    reading each diff and the file, not the fixer's report. Write
+    `<audit-folder>/round-<n>/synthesis.md` and
+    `<audit-folder>/round-<n>/findings.json` (CONTRACTS.md section 12)."
+    If it returned but `findings.json` is missing, ask it once more for only
+-   that file, as `/djinn:review` step 8 does.
++   that file: "`round-<n>/synthesis.md` exists. Write only
++   `round-<n>/findings.json` from it, per CONTRACTS.md section 12. The
++   prior round's findings.json is `<path>` (or none)." If it is still
++   missing, say so in the Step 9 report.
+ 
+ 6. **Consolidator.** Spawn consolidator with `model: "opus"`. Prompt:
+    "MODE: post-dispatch. The fixes in `<audit-folder>/fixes/` landed.
+diff --git a/plugins/djinn/commands/status.md b/plugins/djinn/commands/status.md
+index 2a01355..cea7267 100644
+--- a/plugins/djinn/commands/status.md
++++ b/plugins/djinn/commands/status.md
+@@ -17,7 +17,8 @@ It does no arithmetic of its own and never reads `synthesis.md` prose.
+ `audits/2026-09-12-1402-standard`, or empty.
+ 
+ - Empty: take the most recent folder under `audits/` by name (the names
+-  start with a timestamp). Say which one you picked.
++  start with a timestamp) that holds a `synthesis.md`, skipping any that
++  does not (an `ideas` run or an aborted review). Say which one you picked.
+ - A `round-<n>` folder: use the audit folder above it.
+ - A folder with no `synthesis.md`: say
+   `no synthesis.md in <folder>, has the review finished?` and stop.
+@@ -32,9 +33,10 @@ text).
+ If there is none, say:
+ 
+ ```
+-<audit folder> has no findings.json. It was reviewed before djinn 2.2.0,
+-which is when synthesis started writing one. Read <path to the latest
+-synthesis.md> for the findings.
++<audit folder> has no findings.json. Either it was reviewed before djinn
++2.2.0, when synthesis started writing one, or its synthesis did not write
++one (review and dispatch say so in their final report). Read <path to the
++latest synthesis.md> for the findings.
+ ```
+ 
+ and stop. Do not reconstruct the open list from prose. A guess presented as
+@@ -56,6 +58,8 @@ open: HIGH <n>, MEDIUM <n>, LOW <n>
+   LOW     LOW-7        docs/x.md            <title>   [regressed]
+ resolved this round: MEDIUM-1, LOW-2
+ blocking: R2 HIGH-1, MEDIUM-3
++next: /djinn:brief <audit>/round-2 HIGH-1
++next: /djinn:brief <audit> MEDIUM-3
+ ```
+ 
+ Rules for the listing:
+@@ -74,6 +78,11 @@ Rules for the listing:
+   line out in round 1.
+ - `blocking`: every open HIGH and MEDIUM, with the prefix rule, or `none`.
+   This matches the verdict: a blocking entry means FIX THEN SHIP.
++- After `blocking`, one `next:` line per blocking entry, ready to run:
++  `next: /djinn:brief <folder> <id>`, where `<folder>` is the folder whose
++  synthesis raised it: the audit folder for round 1, `<audit>/round-<k>`
++  for round `k`. A NOT RESOLVED entry gets the same line: a fresh brief is
++  how a second attempt starts.
+ - If `open` is empty, print `open: nothing` and `blocking: none`. That is
+   the whole audit fixed and proven, and it is the good news; say it plainly.
+ 

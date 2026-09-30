@@ -12,10 +12,17 @@ file explains why the flow is shaped the way it is.
 ## Phase 1: Audit (`/djinn:review [scope]`)
 
 The command reads the project's `.djinn/config.yaml`, computes the fence
-(the list of files changed on this branch since it left `base_branch`), and
-spawns review agents. Every agent receives the fence verbatim and reports
-only on files inside it. Files it opens outside the fence are listed, not
-forbidden; synthesis reports them.
+(the list of files changed on this branch since it left `base_branch`,
+plus untracked files git does not ignore), and spawns review agents. Every
+agent receives the fence verbatim and reports only on files inside it.
+Files it opens outside the fence are listed, not forbidden; synthesis
+reports them.
+
+Beside the fence the command writes `tree-facts.md`: untracked files, files
+git tracks and ignores, hand mutants left in source, large files, tracked
+files that import an untracked one, and fenced files with secret-shaped
+names. Reviewers have no shell, so the
+orchestrator gathers these git facts once and hands every agent the path.
 
 Agents run in waves: the pattern checker alone first, the read-only agents
 in parallel, any agent that executes commands one at a time, then
@@ -34,6 +41,7 @@ audits/
     context.md
     fence.txt
     input-diff.patch
+    tree-facts.md
     agents/
       known-bugchecker.md
       bugs-reviewer.md
@@ -87,8 +95,13 @@ the brief landed and before it writes the ledger line.
 ## The next round, automatically
 
 After all briefs land, the same agents run again on the union of the
-landed work sets, plus any file git shows changed that no brief owned
-(a scope leak, named in the report). Synthesis for that round starts with a
+landed work sets, plus any file git shows changed or untracked that no
+brief owned (a scope leak, named in the report). A `live` audit's round
+also reads every tracked file under `live.systems[].code`, because the
+blind review reads the whole tool in every round. A conditional agent whose
+trigger the round fence now fires joins that round. With `--prove`,
+proof-runner first runs the narrowest test for each landed fix, and
+synthesis reads its table beside the diffs. Synthesis for that round starts with a
 table: each prior HIGH and MEDIUM, RESOLVED, NOT RESOLVED, or REGRESSED,
 verified by reading the diff and the file, not the fixer's word.
 
@@ -97,9 +110,10 @@ command stops and hands the decision to a human. The round never auto-fixes.
 
 ## Verdicts
 
-- **SHIP**: zero HIGH and zero MEDIUM after normalization. Nothing blocks a
+- **SHIP**: zero HIGH and zero MEDIUM open after normalization, counting
+  any carried from an earlier round and not yet RESOLVED. Nothing blocks a
   merge to the base branch.
-- **FIX THEN SHIP**: a HIGH or MEDIUM remains. The ids that block are named.
+- **FIX THEN SHIP**: a HIGH or MEDIUM is open, new or carried. The ids that block are named.
 - **ESCALATE**: a HIGH or MEDIUM is in a fact dispute the code could not
   settle. A human reads the Conflicts Resolved section.
 
@@ -109,8 +123,10 @@ pass is never mistaken for a full clearance.
 
 ## The ledger
 
-`audits/LEDGER.md` gets one line per command run, on every exit path,
-including runs that abort at step one. Review, brief, and dispatch each
+`audits/LEDGER.md` gets one line per review, brief, dispatch or prove run,
+on every exit path, including runs that abort at step one. `/djinn:learn`
+writes its line to `<out_dir>/LEDGER.md` instead, and `/djinn:status`
+writes none. Review, brief, and dispatch each
 have a fixed line shape (CONTRACTS.md section 6). A reader can answer
 "what ran on this branch, what did it find, what got fixed" from the ledger
 alone, and open the folder for the detail.
@@ -129,17 +145,51 @@ escaped once is caught mechanically the second time.
 |------------|-----------------------------------------------------------------------------------------|------|
 | `quick`    | known-bugchecker, bugs, integration, synthesis                                          | Small fixes, low risk |
 | `standard` | known-bugchecker, format, bugs, integration, security, perf, synthesis                   | Default |
-| `full`     | standard plus multiuser, breaker, pipe-connector, gap-hunter, then devils-advocate and test-strategist serially, then synthesis and consolidator | New features, critical systems, pre-release |
+| `full`     | standard plus data-contract, cost-complexity, multiuser (when a second actor is named), breaker, pipe-connector, gap-hunter, then gate-auditor, devils-advocate and test-strategist serially, then synthesis and consolidator | New features, critical systems, pre-release |
 | `perf`     | known-bugchecker, perf, breaker, synthesis                                              | Hot-path changes |
+| `cost`     | known-bugchecker, cost-complexity, perf, synthesis                                      | Paid APIs, hosting, IaC, CI, memory ceilings |
+| `live`     | known-bugchecker, live-system-reviewer, synthesis; the fence is the whole tool          | The blind review before a first live run |
 | `ideas`    | gap-hunter alone, no synthesis                                                          | After a debugging session, a new design |
+| `map`      | legibility-reviewer, then synthesis; the fence is the whole tree                        | End of a phase, before onboarding a new agent or person |
 
-Conditional, in every scope but `ideas`: **dependency-reviewer** when the
-fence touches a manifest or lockfile named in the config; **ux-reviewer**
-on `+ux` or when the fence touches a CLI entry point, a config schema, or a
-README.
+Conditional, in every scope but `ideas`, `live` and `map`, each triggered by what
+the fence touches (the exact patterns are in `commands/review.md` Step 2):
+**dependency-reviewer** on a manifest or lockfile named in the config;
+**ux-reviewer** on `+ux`, a CLI entry point, a config schema, or a README;
+**accessibility-reviewer** on `+a11y`, a stylesheet, markup, SVG, a
+component file, a file that builds DOM or draws to a canvas or WebGL scene,
+or a path under `ui_paths`; **data-contract-reviewer** on a schema,
+validator, model, migration, SQL, fixture, a `data.paths` or
+`data.generated` file, or a data folder `project_notes` names;
+**cost-complexity-reviewer** on any `cost` key set, IaC, CI, a manifest, or
+a file naming a paid API; **gate-auditor** on tests, QA, check or bench
+tools, a manifest, test runner config, CI, or a file a `gates` entry names;
+**live-system-reviewer** on a content script, a browser driver outside
+`qa/` and `tests/`, a file naming a paid API, or a `live.systems` path or
+match string; **legibility-reviewer**, in diff mode, when the change adds,
+deletes, renames or copies a file, or touches a file on the default map
+list, quoted from CONTRACTS.md section 5 where it is kept (every
+`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md` and `README*`, the
+conventions files that list files, and any `.md` whose name contains
+`index`, `map`, `layout` or `contents`), or a `maps` entry.
+
+multiuser-reviewer runs in `full` only when `project_notes` or `goal_doc`
+names a second actor (more users, processes, tenants, concurrent clients,
+collaborative editing, a shared worker pool). A single-player project skips
+it and the verdict line says so.
+
+The `live` scope is one fresh reader on purpose: no conditional agents, no
+goal document, no statement of intent. breaker could join it later.
+
+On request only, never by scope or trigger: **proof-runner**, when the
+owner passes `--prove` to `/djinn:dispatch` or asks for it by name. It is
+the one agent that runs project code, one test file at a time under
+`proof.heap_mb`, `proof.memory_wrapper` and `proof.timeout_s`, and it
+refuses without all three, or when a probe shows the wrapper does not
+start or does not cap.
 
 A custom comma-separated agent list is also accepted; unknown names stop
-the run.
+the run, and so do proof-runner and fixer.
 
 | Change type                              | Scope |
 |------------------------------------------|-------|
@@ -147,10 +197,16 @@ the run.
 | Bug fix                                  | quick |
 | Refactor or file split                   | full (pipe-connector maps the blast radius first) |
 | Critical system (save/load, auth, state) | full |
-| UI-only change                           | quick |
+| Schema, migration or persisted format    | full (data-contract-reviewer joins any scope on these) |
+| UI-only change                           | quick (accessibility-reviewer joins on UI files) |
 | Pre-release                              | full |
 | Hot-path code                            | perf |
+| Paid API, hosting, IaC or CI change      | cost |
+| Tests, QA bots, benches, check scripts   | quick or standard (gate-auditor joins on these) |
+| Before a tool first touches a live system | live |
+| Landed fixes nobody has run              | `/djinn:dispatch --prove`, or ask for proof-runner |
 | Post-debugging retrospective             | ideas |
+| End of a phase, or the repo is hard to find your way around | map |
 
 ## Why the flow is split
 
@@ -169,10 +225,24 @@ weeks later.
 The cost is ceremony. For a typo, it is overhead. For anything else, the
 structure pays for itself.
 
+## Learn, a separate pipeline
+
+`/djinn:learn` borrows the relay's habits (Opus only, a timestamped folder,
+a ledger line on every exit path, the section 7 header on every file, the
+section 9 search rules) and nothing else. There is no fence, no severity
+ladder and no verdict, because nothing is being judged: one question is
+being looked at from four sides. The waves mirror a review round: four
+angle agents in parallel per question, a fact checker per question, one
+synthesis, a blind reader that never sees a key, then a mechanical check
+of the training files. CONTRACTS.md
+section 13 is its contract.
+
 ## Commands
 
 | Command                                     | Phase | Purpose |
 |---------------------------------------------|-------|---------|
-| `/djinn:review [scope] [--base <ref>] [--goal "<text>"] [+ux]` | 1 | Compute the fence, run the audit, write the folder and the ledger line, stop |
+| `/djinn:review [scope] [--base <ref>] [--untracked none \| <path-list-file>] [--goal "<text>"] [+ux] [+a11y]` | 1 | Compute the fence, run the audit, write the folder and the ledger line, stop |
 | `/djinn:brief <audit-folder> <id>`          | 2 | Generate a fix brief from a synthesis finding, verify the citation, write the ledger line |
-| `/djinn:dispatch <brief> [<brief>...]`      | 3 | Execute briefs in batches, save diffs and reports, run the next round, write the ledger line |
+| `/djinn:dispatch [--prove] [--no-tests] <brief> [<brief>...]` | 3 | Execute briefs in batches, save diffs and reports, prove them if asked, run the next round, write the ledger line |
+| `/djinn:status [<audit-folder>]`            | any | Print what is still open across every round, from the latest `findings.json`. Read only, no ledger line |
+| `/djinn:learn "<question>" [--id <name>] \| <quiz file> [<id>...] \| --topic "<topic>" [--sources <paths>] [--secure]` | none | Not a review. Four angle agents per question, a fact checker, synthesis, a blind reader: draft items, SFT, DPO and GRPO rows, a study sheet, a run folder under `learn/` (git ignored by the first run) and a line in `learn/LEDGER.md` |

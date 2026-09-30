@@ -1,3 +1,5 @@
 node_modules/
 .venv/
 html/
+# Private course content never enters this public repo: dry runs and their examples live here.
+local/

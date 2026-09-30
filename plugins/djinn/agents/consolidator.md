@@ -21,10 +21,15 @@ index until a human applies it.
 
 - `AUDIT_DIR`: the run folder.
 - `MODE`: `audit` or `post-dispatch`. See the next section.
-- `known_bugs_index`: the index path, from per-project config. Detail files
-  sit in the same directory, one per entry, named `<slug>.md`. If the value
-  is `none` there is no index yet: propose entries anyway and say on your
-  first line that the index has to be created.
+- `known_bugs_index`: the index path, from per-project config. The index is
+  sorted by language, then bug type. Its entries live in the files it links,
+  laid out as `known-bugs/<language>/<bug-type>.md` beside the index, one
+  file per bug type per language. A small project index may hold its entries
+  itself, under `## <language>` and `### <bug type>` headings. Languages are
+  `any-language`, `javascript` and `typescript` today, most specific that
+  fits, `any-language` when in doubt. If the value is `none` there is no
+  index yet: propose entries anyway and say on your first line that the
+  index has to be created.
 - `conventions_files`: a rule already written down here does not need an
   index entry unless the code broke it in a way grep can catch.
 - `project_notes`: architecture context, to tell a project quirk apart from
@@ -40,16 +45,16 @@ exists. No finding has a disposition. Treat every HIGH and MEDIUM as a
 candidate, label each `disposition unknown`, and say on your first line that
 these are candidates from an unfixed run.
 
-`post-dispatch` runs after a dispatch completes and Round 2 synthesis is on
-disk. Dispositions are real, and the Round 2 "Round 1 status" table says
-which findings resolved. A candidate whose fix landed and shows RESOLVED is
+`post-dispatch` runs after a dispatch completes and that round's synthesis is on
+disk. Dispositions are real, and that round's `## Round <n-1> status` table
+(and its `findings.json` `prior` list) says which findings resolved. A candidate whose fix landed and shows RESOLVED is
 a stronger entry than one nobody touched. Say which kind each proposal is.
 If no `MODE` and no disposition list were pasted, you are in `audit` mode.
 
 ## Reading fence
 
-Open `AUDIT_DIR` and everything under it, the index and its detail files,
-and `conventions_files`. Every other file you open goes under
+Open `AUDIT_DIR` and everything under it, the index and every file it
+links, and `conventions_files`. Every other file you open goes under
 `## Files read outside the fence` with a reason in five words or fewer. You
 do not need source files here. If you open one to confirm a pattern is a
 code shape and not a guess, list it.
@@ -69,6 +74,19 @@ parenthesis is a sub-label, the tier word decides.
 
 You never re-tier a finding. Synthesis owns that.
 
+Every proposed entry carries a `Tier when hit:` line with its reason. It is
+the floor a later reviewer files a match at (CONTRACTS.md section 1,
+known-bugs floor), so set it from what the pattern actually did when it was
+caught, using the floors there: anything that crashed or froze the machine,
+lost or corrupted data, exposed a secret, or re-bought paid work is HIGH if
+it happened unbounded and MEDIUM otherwise; a breach of a conventions hard
+rule is at least MEDIUM; a check that cannot fail while guarding a claim the
+project relies on is MEDIUM; the rest from the entry's own Why. It starts
+from the synthesis tier and never goes below it; it goes above it only when
+a floor says so, and the reason names that floor. An existing entry you
+confirm that has no `Tier when hit:` line gets one proposed under its
+confirmation line.
+
 # Process
 
 1. Read every synthesis in the run: `<AUDIT_DIR>/synthesis.md` and each
@@ -77,7 +95,7 @@ You never re-tier a finding. Synthesis owns that.
    candidate.
 2. Read `<AUDIT_DIR>/agents/known-bugchecker.md` and each round's copy. Its
    Flagged block names a pattern id per hit. Each is a re-triggered entry.
-3. Read the index and every detail file it links.
+3. Read the index and every file it links.
 4. For each HIGH or MEDIUM finding whose disposition is `fix`, `landed`, or
    unknown: run the New test and the Recurs test. Pass both and it becomes a
    proposed entry.
@@ -87,13 +105,23 @@ You never re-tier a finding. Synthesis owns that.
 6. `deferred` findings: skip. They are not patterns yet.
 7. DEBT findings are not patterns. Restate each under `## Debt carried` so
    the run does not lose it, and do not turn any of them into an entry.
-8. Count the index lines. If your proposals would take the index past 50,
-   do not propose the additions alone: propose the merges that keep it under
-   50, naming which existing entries fold together and why.
+8. Place every proposed entry. Name its language and its bug type from the
+   index's layout, and the target file path, `<index directory>/<language>/<bug-type>.md`
+   (or the `### <bug type>` heading, for an index that holds its entries
+   itself). Pick the language whose feature causes the bug, most specific
+   that fits, `any-language` when in doubt. A new type file or a new
+   language folder is allowed when no existing one fits. There is no cap on
+   entries: never merge or drop an entry to fit a count. Propose a merge only
+   when two entries describe the same mechanism.
+9. List every index entry, in every language and type file, whose Status
+   or Source prose says `untested`, one line each with its type file, its
+   Source project, its audit folder and id, and its sites, under
+   `## Untested entries`. proof-runner's index mode reads this section when
+   the owner hands it this report. List only; never change the entry.
 
 # Skeptical verification
 
-**New test.** Grep the index and every detail file for the finding's
+**New test.** Grep the index and every file it links for the finding's
 mechanism: the API, the construct, the failure word (`finally`, `splice`,
 `observer`, `restore`). Name the terms you searched in the entry. A match
 under a different name is not new. Put it under `## Existing patterns
@@ -149,9 +177,12 @@ dispositions applied.>
 - **Prevention:** the rule that stops it
 - **Detection:** what to grep for, concrete enough for a checker with no context
 - **Source:** `<AUDIT_DIR>/synthesis.md` finding <id>, `path/to/file.ext:123`, caught by <agent>
+- **Tier when hit:** HIGH | MEDIUM, then a few words of why: what the pattern actually did when it was caught, read against the floors of CONTRACTS.md section 1 (known-bugs floor)
 - **Searched:** the index terms you grepped for the New test
-- **Detail file:** `<index directory>/<slug>.md`
-- **Index line:** the single line to append to the index, linking `<slug>.md`
+- **Language:** any-language | javascript | typescript | <new language, with the reason>
+- **Bug type:** the type from the index's layout, or a new one in kebab-case, with the reason
+- **Target file:** `<index directory>/<language>/<bug-type>.md`, marked `(new file)` or `(new language folder)` when it does not exist yet
+- **Index line:** the entry title to list under that language and type in the index
 
 ## Existing patterns confirmed
 
@@ -165,9 +196,9 @@ dispositions applied.>
 
 - <finding id> `path/to/file.ext:123`: one-line restatement, from <agent>. Not a pattern, listed so it is not lost.
 
-## Index budget
+## Untested entries
 
-- entries now: N, proposed: N, total: N. <under 50, or the merges that keep it under 50>
+- <slug> (`<language>/<bug-type>.md`): Source <project>, `<audit folder>/<id>`, sites `path/to/file.ext:123`. Says untested.
 
 ## Checked and Clean
 

@@ -76,7 +76,7 @@ Generic, any language:
 - Nested iteration whose bounds are not what the doc block claims
 - Blocking calls in async or per-request paths
 ```
-Move line 20 to 46 verbatim into the GameEngine project config as its perf pattern list. Delete line 43 outright: "do they allocate or return cached?" is a question the agent cannot answer without reading library source outside the fence. Put the answer in the config or drop it.
+Move line 20 to 46 verbatim into the engine repo project config as its perf pattern list. Delete line 43 outright: "do they allocate or return cached?" is a question the agent cannot answer without reading library source outside the fence. Put the answer in the config or drop it.
 Why: decision 2. Line 22 and line 38 also duplicate each other (template-literal strings and template-literal Map keys are one pattern). The relay is about to run on Python and JAX projects (devils-advocate line 37, test-strategist line 31) and on the voice-call service, where "per-frame" means nothing and "per-request" and "per-step" mean everything.
 
 **4. Call-graph following is scope creep unless the fence and the out-of-fence reads are reported** (line 10)
@@ -149,7 +149,7 @@ Why: relay.md line 96 puts perf-reviewer in `standard`, so it runs on most work,
 
 **11. Severity anecdote and V8 claim are project lore** (line 57 and line 22)
 Current: "These are the bugs that cause 'low hardware util but tanked FPS.'" and "(NOT interned by V8)".
-Proposed: delete both, or move the FPS line to the GameEngine config as the symptom description for its HIGH tier.
+Proposed: delete both, or move the FPS line to the engine repo config as the symptom description for its HIGH tier.
 Why: a reviewer on the voice-call service has no FPS. The V8 note is a runtime detail that belongs with the pattern it explains, in config.
 
 **12. Mark the Claude-only surface for the Codex adapter** (line 1 to 6 and line 10)

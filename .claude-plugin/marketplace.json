@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "djinn",
-      "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder and a ledger line.",
+      "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder and a ledger line. /djinn:learn, a separate pipeline, turns one exam question into study material and SFT, DPO and GRPO training data, every claim cited to the repo or marked UNVERIFIED.",
       "author": { "name": "Donald Galliano III" },
       "category": "quality",
       "source": "./plugins/djinn"

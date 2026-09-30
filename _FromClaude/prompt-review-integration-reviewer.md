@@ -38,7 +38,7 @@ Proposed (line 21):
 Proposed (line 27):
 > **Serialization and restore paths:** If the change adds or reshapes state, do save/load, import/export, snapshot or undo capture, and hot reload (where the project has it) carry the new state? The project config lists these paths.
 Proposed (line 3): replace "UI desync" with "consumers left out of sync".
-Why: decision 2. `syncFromState()` and HMR are GameEngine facts. The two workplace developers will run this against a Python voice-call service where neither exists, and the agent will report "no syncFromState call found" as a finding or skip the whole bullet.
+Why: decision 2. `syncFromState()` and HMR are the engine repo facts. The two workplace developers will run this against a Python voice-call service where neither exists, and the agent will report "no syncFromState call found" as a finding or skip the whole bullet.
 
 **5. Merge "Caller impact" into "Blast radius check", fix the wording, drop the tool name** (lines 25 and 29 to 34)
 Current: line 25 "If a function signature changed, are ALL callers updated? `Grep` for the function name." Lines 29 to 34 say the same thing in three steps, opening with "When a fix changes a function signature".

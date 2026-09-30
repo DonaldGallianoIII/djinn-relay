@@ -1,0 +1,2251 @@
+Redacted 2026-09-29, before this folder was committed. This file no longer applies as a patch.
+The 34 file sections under docs/examples/ (the two dry run folders of commit 32a1c17, private course content)
+are removed, and 37 changed lines in the plugin sections that used a private item, its key or a private
+repo path as an example are replaced by a [redacted] marker. The plugin sections are otherwise the reviewed diff,
+153ad84 to 28e269c. Removed sections, by path only: see fence.txt.
+
+diff --git a/.djinn/config.yaml b/.djinn/config.yaml
+index 337cec6..fe4888c 100644
+--- a/.djinn/config.yaml
++++ b/.djinn/config.yaml
+@@ -53,5 +53,11 @@ project_notes: |
+   (cost-complexity-reviewer, accessibility-reviewer, gate-auditor,
+   proof-runner, live-system-reviewer, data-contract-reviewer,
+   legibility-reviewer), the cost, live and map scopes, tree-facts.md, and
+-  tree.txt and tree-changes.txt for legibility-reviewer. Donald's installed copy is a separate
++  tree.txt and tree-changes.txt for legibility-reviewer. Version 2.4.0
++  adds /djinn:learn and six learn- agents (learn-known, learn-asked,
++  learn-harder, learn-prepare, learn-fact-checker, learn-synthesis), with
++  CONTRACTS.md section 13 as their contract: a separate pipeline with no
++  fence and no tiers, repo agnostic through a learn config block or
++  discovery, writing TRL shaped JSONL that the command checks with one
++  python3 call. Donald's installed copy is a separate
+   cached 2.1.0; nothing here is published until he publishes it.
+diff --git a/plugins/djinn/.claude-plugin/plugin.json b/plugins/djinn/.claude-plugin/plugin.json
+index 5d5a263..e4fb29b 100644
+--- a/plugins/djinn/.claude-plugin/plugin.json
++++ b/plugins/djinn/.claude-plugin/plugin.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "djinn",
+-  "version": "2.3.0",
+-  "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder under audits/ and one line in audits/LEDGER.md. Reviewers work inside a git-derived fence against a configured base branch. Fixers execute one brief each inside a work-set guard. The next review round runs automatically after fixes land. Everything runs on Opus.",
++  "version": "2.4.0",
++  "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder under audits/ and one line in audits/LEDGER.md. Reviewers work inside a git-derived fence against a configured base branch. Fixers execute one brief each inside a work-set guard. The next review round runs automatically after fixes land. Everything runs on Opus. /djinn:learn, a separate pipeline, turns one exam question into multi-angle study material and SFT, DPO and GRPO training data, with every claim cited to the repo or marked UNVERIFIED.",
+   "author": { "name": "Donald Galliano III" },
+-  "keywords": ["code-review", "multi-agent", "relay", "adversarial", "quality", "orchestration", "fix-dispatch", "ledger"],
++  "keywords": ["code-review", "multi-agent", "relay", "adversarial", "quality", "orchestration", "fix-dispatch", "ledger", "learning", "training-data"],
+   "repository": "https://github.com/donaldgallianoiii/djinn-relay"
+ }
+diff --git a/plugins/djinn/CONTRACTS.md b/plugins/djinn/CONTRACTS.md
+index 520b283..d6c37dc 100644
+--- a/plugins/djinn/CONTRACTS.md
++++ b/plugins/djinn/CONTRACTS.md
+@@ -333,6 +333,10 @@ as an env var name, never the value. `cost.paid_apis[].key` must match
+ 
+ What the optional blocks mean, and who reads them:
+ 
++- `learn`: for `/djinn:learn` only, never read by a review, brief or
++  dispatch. Its keys, its discovery rules and its examples are in section
++  13.
++
+ - `ui_paths`: paths whose files render something a person reads or
+   operates, beyond what the file extension and a DOM or canvas grep catch
+   (a module that only returns mark data for a renderer).
+@@ -455,8 +459,9 @@ What the optional blocks mean, and who reads them:
+ 
+ Every command that writes to the audit folder appends exactly one line to
+ `audits/LEDGER.md` on every exit path, including early stops and halts.
+-`/djinn:status` writes nothing, so it appends nothing. The file starts with
+-this header:
++`/djinn:status` writes nothing, so it appends nothing. `/djinn:learn`
++writes no audit folder and keeps its own ledger, `<learn.out_dir>/LEDGER.md`
++(section 13). The file starts with this header:
+ 
+ ```
+ | when | command | audit folder | detail | outcome | counts |
+@@ -514,10 +519,15 @@ Any file an agent or command writes into the repo starts with:
+ title: <what this is>
+ author: Claude <model> (<agent or command name>)
+ date: <YYYY-MM-DD>
+-status: <audit finding, not yet deliberated | agent output, not yet reviewed | pending | landed>
++status: <audit finding, not yet deliberated | agent output, not yet reviewed | pending | landed | learn draft, not yet reviewed>
+ ---
+ ```
+ 
++`learn draft, not yet reviewed` is the status of every file the learn
++family writes (section 13). A `.jsonl` file cannot carry a header, so its
++rows carry the same facts in `metadata`, and the run's `README.md` carries
++the header for them.
++
+ ## 8. Model
+ 
+ Every Agent call names `model: opus` explicitly. Every agent file's
+@@ -806,3 +816,347 @@ rounds reads cleanly.
+ final: synthesis builds the copy from it, does not edit it, and reports any
+ count that does not match instead of fixing it. An older `synthesis.md`
+ with no "Open across rounds" line is not a mismatch.
++
++## 13. Learn
++
++`/djinn:learn` is not part of the review relay. It turns one exam question,
++a quiz file of them, or a topic into study material and training data. Its
++six agents share the `learn-` prefix: learn-known, learn-asked,
++learn-harder, learn-prepare, learn-fact-checker and learn-synthesis. They
++are not reviewers. They get no fence, file no findings, emit no severity
++tier from section 1, write no `findings.json`, and never touch `audits/`.
++Sections 7 (header, with status `learn draft, not yet reviewed`), 8 (Opus,
++always) and 9 (tools and search rules) apply to them in full. Section 11
++applies to every file they write, the training rows included.
++
++**The pipeline is an LLM pass and is not deterministic.** The same
++question run twice gives different items and different rows. Every run
++records its input verbatim, the input's `path:line`, the target repo's HEAD
++and whether the input file had uncommitted changes, the date, and the
++model, in the run's `context.md` and `README.md`. A project whose own
++content is seeded and regenerable (an exam built from a seed) never feeds
++a learn run's output into that path; a person moves an item into content
++by hand.
++
++### Config, or discovery
++
++Learn is repo agnostic. Each target repo says what counts as a source, what
++its quiz items look like, what its difficulty tiers are, and which settings
++its scenarios rotate through. The command reads an optional `learn` block
++from `.djinn/config.yaml` in the target repo; it does not need
++`base_branch`, and it runs with no config file at all.
++
++```yaml
++learn:
++  sources:               # what the fact checker may cite, in the owner's order of trust
++    - content/lectures/
++    - docs/research/
++  exclude: []            # never read as evidence (the input file, learn/ and audits/ always are)
++  item_shape:            # schema docs, tests and a real bank that define the repo's quiz item
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++    - tests/quiz-yaml.test.mjs
++  writing_rules:         # read before any item or explanation is written
++    - docs/ANSWER-KEY-VOICE.md
++    - docs/ITEM-WRITING.md
++  tiers: []              # the repo's own difficulty tiers, in order; absent means the generic ladder
++  #  - name: easy
++  #    tests: the mechanism, what happens and why
++  scenarios: []          # the settings items rotate through; absent means none
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++  secure_paths:          # inputs from here never leave this repo; [.] for a private repo
++    - content/secure/
++  out_dir: learn/        # absent means learn/
++```
++
++Two filled examples, to show the range. The teaching repo:
++`sources: [content/lectures/, content/reference/, docs/research/, docs/TEXTBOOKS.md]`,
++`item_shape: [content/secure/<a quiz>.yaml, tests/quiz-yaml.test.mjs]`,
++`writing_rules: [docs/ANSWER-KEY-VOICE.md, docs/ITEM-WRITING.md]`, no
++tiers (its `d` field is a 1 to 3 difficulty, not a named tier),
++`secure_paths: [content/secure/]`. The course repo:
++`sources: [research/, docs/]` (per module, `research/<track>/<module>/sources.md`
++and `notes.md`, and `docs/<track>/one-read.md`),
++`item_shape: [content/schema/quiz.md, tests/content.test.mjs]`, three
++tiers (easy: the mechanism; medium: apply it; hard: spot the mistake in a
++spec, or make the call), scenarios from its CLAUDE.md "Scenarios rotate",
++`secure_paths: [.]`.
++
++**Discovery.** For any key the config and the arguments leave empty, the
++command proposes a value from the target repo itself and shows it in the
++plan, and the run waits for the owner's `go` before anything is spawned:
++
++- `sources`: folders and files the repo's `CLAUDE.md`, `README` and folder
++  names say hold cited or reference material (`research/`, `reference/`,
++  `sources/`, `docs/research/`, files named `sources.md`, `notes.md`,
++  `one-read.md`, `TEXTBOOKS.md`), and, for an input under a track or module
++  folder, the research and docs folders carrying the same track and module
++  names. Never the input file, never `learn/` or `audits/`.
++- `item_shape`: the input file itself when it is a quiz bank (it is an
++  instance of the shape), plus any schema doc and any test the repo's
++  `CLAUDE.md` names for quiz items, or that sits in a `schema` folder or
++  has `quiz`, `item` or `content` in a test file name.
++- `writing_rules`: files the repo's `CLAUDE.md` names for writing items,
++  rationales or answer keys, and `~/Conventions/voice/ITEM-WRITING.md` and
++  `EXPLAINING.md` when the `CLAUDE.md` points at the owner's conventions.
++- `tiers`: tier names and definitions a schema doc or the `CLAUDE.md`
++  states, quoted with `path:line`. None found means the generic ladder.
++- `scenarios`: settings the `CLAUDE.md` or a schema doc lists for items,
++  with the file each setting's details come from. None found means none.
++- `secure_paths`: folders the `CLAUDE.md` or a README calls secure, never
++  published or private, and `.` when it says the whole repo stays private.
++
++A discovered value is a proposal, never a guess acted on: nothing runs
++until the owner says `go`, and `context.md` records which values came
++from config, arguments or discovery. `--sources <a>,<b>` replaces
++`sources` for one run. With no sources from any of the three, the command
++stops: a fact checker with nothing to cite marks every claim UNVERIFIED,
++and a run of that is noise presented as data. An input whose path has a
++folder named `secure`, or that sits under a `secure_paths` entry (`.` is
++the whole repo), is a **secure source** (below).
++
++**The ladder.** With `tiers`, the difficulty ladder is the repo's tiers in
++order, one new item per tier at least, and one per kind when a tier's
++definition names more than one kind ("spot the mistake in a spec, or make
++the call" is two). A repo rule wins over the generic ladder: where the repo
++calls vocabulary recall a defect, no recall item is written. Without
++`tiers`, the generic ladder has six rungs: `recall`, `discrimination`
++(against the nearest neighbor), `application` (a case or a figure),
++`multi-step`, `spot-the-mistake` (a spec, order, protocol or scoring note
++with one planted fault: a leakage feature, an adult threshold used on an
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++`edge-case` (the exception or the boundary).
++
++**Scenarios.** With `scenarios`, the items learn-asked and learn-harder
++write show each concept in at least two of the listed settings, and every
++detail about a setting comes from the file the entry names, never from
++recall.
++
++### Claims and their status
++
++Every factual statement an angle agent writes is a claim: one fact per
++claim (a number, a unit, a stage, a location, a rule, a definition, what a
++student gets wrong). Claim ids are `<letter><n>`, unique within one
++question: `K` for learn-known, `A` learn-asked, `H` learn-harder, `P`
++learn-prepare. Across questions a claim is `<question id>.<claim id>`, for
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++
++| Status       | Means |
++|--------------|-------|
++| VERIFIED     | A line in a `sources` file states the same fact: the same number, unit, stage, location or rule. Cited `path:line`. Two or more lines may carry it together when only arithmetic or a direct comparison of their numbers joins them, noted `composed`. |
++| UNVERIFIED   | No source line states it, or one states only part of it (the note says which part), or only a repo file outside the sources states it (the note names that file). Nothing is dropped for being UNVERIFIED. |
++| CONTRADICTED | A source line states something different about the same thing. Both sides are cited: the source line, and where the claim came from (`path:line`, or `recall`). Two source lines that disagree with each other are CONTRADICTED too, with both cited. |
++
++The item under study, its file, every learn run folder and `audits/` are
++never evidence: an answer key cannot verify itself. The fact checker never
++edits a claim and never upgrades a status. Synthesis never re-verifies:
++it reads the table. A row, an item or a study sheet line is VERIFIED only
++when every claim it uses is VERIFIED; with any UNVERIFIED claim it ships
++marked UNVERIFIED with that claim's id; with any CONTRADICTED claim it is
++quarantined (written to `quarantine.md` only, with both citations) for the
++owner to rule on, except that a CONTRADICTED claim sitting only in a note
++the piece stands without (a pull, a trap, an extend line) takes that note
++to quarantine and lets the piece ship without it. A factual sentence an
++angle left without a claim id is checked all the same, as `U<n>`.
++
++### Training data shapes
++
++Checked against the Hugging Face TRL documentation on 2026-09-29, pages
++served as TRL v1.14.1:
++
++- https://huggingface.co/docs/trl/dataset_formats
++- https://huggingface.co/docs/trl/sft_trainer
++- https://huggingface.co/docs/trl/dpo_trainer
++- https://huggingface.co/docs/trl/grpo_trainer
++
++Every file is JSON Lines: one JSON object per line, UTF-8, no blank lines,
++no pretty printing. Every row uses the **conversational** format, where a
++message is `{"role": "system" | "user" | "assistant", "content": "<text>"}`.
++
++- `sft.jsonl`, conversational language modeling (SFTTrainer accepts
++  language modeling or prompt-completion):
++  `{"messages": [system, user, assistant], "metadata": {...}}`.
++- `dpo.jsonl`, conversational preference with an explicit prompt (the form
++  the DPO page marks recommended):
++  `{"prompt": [system, user], "chosen": [assistant], "rejected": [assistant], "metadata": {...}}`.
++  `chosen` is the full discriminating answer: the key, why, and every other
++  option placed in its true home with why it is wrong here. `rejected` is
++  either the shallow answer (the key stated, nothing else) or a
++  misconception answer. `metadata.pair` says which: `shallow` or
++  `misconception`.
++- `grpo.jsonl`, conversational prompt-only (GRPOTrainer expects a
++  `prompt` column) plus the columns the reward reads:
++  `{"prompt": [system, user], "answer": "<key>", "rubric": [check, ...], "metadata": {...}}`.
++  Only an item with an answer a string compare can check goes here. The
++  user message ends with the line `End your reply with one line: Answer: <your answer>`.
++
++**metadata.** Every row carries one `metadata` object with the same keys in
++the same order, all strings or lists of strings, so a loader infers one
++schema: `source_id`, `source_ref`, `item`, `run`, `angle` (`known`, `asked`,
++`harder`, `prepare`), `rung` (the repo's tier name when it has tiers,
++else the generic rung, or `none`), `verification` (`VERIFIED` or
++`UNVERIFIED`), `claims`, `unverified_claims`; DPO rows add `pair` last.
++What TRL does with it, as the pages read on 2026-09-29: the GRPO page says
++extra columns are not used for training and are passed to reward functions
++as keyword arguments, so `metadata` reaches the reward as `metadata` and a
++`**kwargs` takes it. The SFT and DPO pages say nothing about extra
++columns, so the run README says to filter on `metadata`, then drop it
++before those two trainers: `ds = ds.remove_columns("metadata")`. Nothing
++here claims more than the pages say.
++
++**The GRPO rubric.** Verifiable answer first, rubric for the rest. Each
++check is `{"id": "<text>", "kind": "answer" | "mentions" | "forbids", "weight": <number>, "terms": ["<text>", ...]}`,
++the same four keys every time. One `answer` check per row, first, its
++`terms` the accepted answers with the `answer` column's value first. The
++`answer` and `mentions` weights add to 1.0; `ANSWER_WEIGHT` is 0.5 until
++the owner sets another. A `forbids` weight is a penalty, not a share of
++the 1.0: `FORBIDS_PENALTY` is 0.15 until the owner sets another. A
++`forbids` check that paid for staying silent would reward the shallow
++answer this pipeline exists to push down (the dry run measured it: a bare
++key scored 0.65, the same as a key with a quarter of the homes named,
++before this rule). `mentions`
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++`forbids` terms are the words a named misconception uses and a correct
++answer does not. The score:
++
++1. The reply's last non-empty line must match `Answer: <text>`
++   (case-insensitive). Normalize both sides: lower case, whitespace
++   collapsed, a trailing period dropped. No match with any `answer` term
++   scores 0.0 and the other checks are not read.
++2. Otherwise the score is the `answer` weight, plus each `mentions` weight
++   times the fraction of its terms found, minus each `forbids` weight when
++   any of its terms is found, never below 0.0. A term is found when it
++   appears with no letter or digit on either side, case-insensitive.
++
++So the full answer scores 1.0, the bare key 0.5, the key argued with a
++named misconception less than that, and a wrong key 0.0.
++
++The reference reward, for the owner to copy into a training script. It is
++a GRPO reward function in the shape the GRPO page gives
++(`prompts, completions, **kwargs`, one float per completion):
++
++```python
++import re
++
++ANSWER_LINE = re.compile(r"^answer:\s*(.+)$", re.IGNORECASE)
++
++def _norm(text):
++    return re.sub(r"\s+", " ", text.strip().lower()).rstrip(".").strip()
++
++def _found(term, text):
++    pattern = r"(?<![a-z0-9])" + re.escape(term.lower()) + r"(?![a-z0-9])"
++    return re.search(pattern, text.lower()) is not None
++
++def learn_reward(prompts, completions, answer, rubric, **kwargs):
++    scores = []
++    for completion, checks in zip(completions, rubric):
++        text = completion[-1]["content"] if isinstance(completion, list) else completion
++        lines = [line for line in text.strip().splitlines() if line.strip()]
++        match = ANSWER_LINE.match(lines[-1].strip()) if lines else None
++        given = _norm(match.group(1)) if match else None
++        key_check = next(c for c in checks if c["kind"] == "answer")
++        if given is None or given not in [_norm(t) for t in key_check["terms"]]:
++            scores.append(0.0)
++            continue
++        score = key_check["weight"]
++        for check in checks:
++            if check["kind"] == "mentions" and check["terms"]:
++                hits = sum(_found(t, text) for t in check["terms"])
++                score += check["weight"] * hits / len(check["terms"])
++            elif check["kind"] == "forbids":
++                if any(_found(t, text) for t in check["terms"]):
++                    score -= check["weight"]
++        scores.append(round(max(score, 0.0), 6))
++    return scores
++```
++
++### Draft exam items
++
++When `learn.item_shape` names a question bank, synthesis writes
++`items-DRAFT.<the bank's extension>` in that bank's exact shape: its top
++level keys, its item keys and their order, its value types, its quoting
++(for YAML: any string carrying a colon and a space is quoted), and every
++rule the named test or writing rule file states. A key the shape has and
++synthesis cannot fill from a real file (a figure path for a figure that does not
++exist) is left out and named in a comment. When the shape carries its own
++attribution block (an `attribution:` key with author, date and status),
++synthesis fills it in that form, with the status word the shape uses for
++unreviewed work, and says `learn draft` in the block's note. Otherwise, in
++a YAML file the section 7 header is written as comment lines, because a
++`---` block would make the file two documents.
++
++With no item shape found, synthesis writes `items-DRAFT.yaml` in the
++neutral shape below and says so in the README:
++
++```yaml
++# title, author, date, status as comment lines (section 7)
++shape: neutral, no repo item shape found
++items:
++  - id: <source id>-<angle letter><n>
++    tier: <repo tier or generic rung>
++    type: single | multi | fill | short
++    stem: "<text>"
++    options:                 # single and multi only
++      - text: "<text>"
++        key: true
++      - text: "<text>"
++        trap: "<why a half-informed reader picks it>"
++    answer: "<text>"         # fill and short only
++    rationale: "<the rule and the fact>"
++    scenario: <setting name or generic>
++    needs_figure: "<description>"   # only when one is needed
++    claims: [<qid>.<id>, ...]
++    status: VERIFIED | UNVERIFIED
++``` The file lives in the run folder and nowhere else: no
++learn agent writes into the repo's content.
++
++### Secure sources
++
++An input from a secure source (above) never leaves the target repo. The
++command refuses an input path from a secure source in another repo, the
++run README's first line after its header says `SECURE SOURCE`, and the README tells the
++owner that every derived item and row can leak the original item's key, so
++the folder stays out of any public repo and off any public dataset hub.
++
++### The run folder and the ledger
++
++```
++<out_dir>/
++  LEDGER.md                          one line per run, never edited by hand
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++    context.md                       input, repo HEAD, sources, date, model
++    input.md                         each question verbatim, with path:line
++    angles/<qid>/learn-known.md      one file per angle agent per question
++    angles/<qid>/learn-asked.md
++    angles/<qid>/learn-harder.md
++    angles/<qid>/learn-prepare.md
++    verification/<qid>.md            the fact checker's claim table
++    items-DRAFT.yaml                 new exam items in the repo's shape
++    sft.jsonl, dpo.jsonl, grpo.jsonl the training rows
++    study-sheet.md                   for a student, every line marked
++    quarantine.md                    everything built on a CONTRADICTED claim
++    README.md                        counts, what is UNVERIFIED, how to load each file
++    check.txt                        the command's line by line JSON check
++    usage.md                         tokens per agent, section 6's table
++```
++
++`<out_dir>/LEDGER.md` starts with this header. One line per run, on every
++exit path:
++
++```
++| when | command | run folder | input | outcome | counts |
++|------|---------|------------|-------|--------|--------|
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++```
++
++Outcome is `COMPLETE`, `PARTIAL: <what>` (an agent failed after retry, or
++a file failed its check after the one rewrite), `DECLINED at plan`, or
++`ABORTED step <k>: <reason>`.
++
++### The command's one interpreter call
++
++The learn command, not any agent, checks each `.jsonl` file line by line
++with `python3` running the script whose exact text is in
++`commands/learn.md` Step 9, written to `$RUN_TMP` and fed the file list
++through `xargs -0 -r`. That is the only interpreter any part of the learn
++family starts. No learn agent has Bash.
+diff --git a/plugins/djinn/README.md b/plugins/djinn/README.md
+index af992ba..2921844 100644
+--- a/plugins/djinn/README.md
++++ b/plugins/djinn/README.md
+@@ -28,8 +28,8 @@ Or, from a local checkout while developing the plugin itself:
+ ```
+ 
+ Restart Claude Code after installing. The commands `/djinn:review`,
+-`/djinn:brief`, `/djinn:dispatch` and `/djinn:status` now exist in every
+-project.
++`/djinn:brief`, `/djinn:dispatch`, `/djinn:status` and `/djinn:learn` now
++exist in every project.
+ 
+ ## Set up a project
+ 
+@@ -167,6 +167,44 @@ only, resident memory unbounded`. Without `heap_mb` the fixer runs no test
+ and the landing lane runs with no memory cap, and the dispatch plan says
+ so. `--no-tests` skips the landing lane.
+ 
++## Learn: one question, four angles, training data
++
++`/djinn:learn` is not a review. It takes an exam question and asks what a
++student should have known, what else could have been asked, how the
++question gets harder, and how to prepare, then checks every claim against
++the repo and writes draft exam items, training rows and a study sheet.
++
++```
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++/djinn:learn <any of the above> --sources content/lectures/,docs/research/
++```
++
++It works in any repo. Your repo decides what counts as a source, what a
++quiz item looks like, what the difficulty tiers mean, and which settings
++items rotate through: say so in a `learn` block in `.djinn/config.yaml`
++(`templates/config.yaml` shows it), or let the command propose each value
++from your `CLAUDE.md`, schema docs and folders and confirm it at the plan.
++A claim counts as VERIFIED only with a `file:line` in those sources.
++Anything else ships marked UNVERIFIED for you to rule on, and anything a
++source contradicts is held back in `quarantine.md` with both citations.
++
++The training files follow Hugging Face TRL's conversational shapes,
++checked against the TRL docs on 2026-09-29 (`CONTRACTS.md` section 13 has
++the URLs): `sft.jsonl` as `messages`, `dpo.jsonl` as `prompt`, `chosen`,
++`rejected`, and `grpo.jsonl` as `prompt` and `answer` plus a rubric a
++reward function scores. The command checks every line parses before it
++reports done.
++
++It is an LLM pass, so two runs on one question give different output. The
++run README records the input, the repo commit, the date and the model. Its
++items are drafts in your quiz file's own shape, and nothing lands in the
++repo's content: you move an item there by hand. A question from a
++`secure/` folder never leaves the repo it came from.
++
+ ## What gets written where
+ 
+ ```
+@@ -188,6 +226,18 @@ audits/
+     round-2/                         the re-review after fixes landed
+       agents/, synthesis.md, findings.json, fence.txt, tree-facts.md
+       proof.md                       proof-runner's table, only with --prove
++
++learn/
++  LEDGER.md                          one line per learn run
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++    context.md, input.md             what went in: the question, the commit, the model
++    angles/<qid>/learn-*.md          the four angle reports per question
++    verification/<qid>.md            every claim: VERIFIED, UNVERIFIED or CONTRADICTED, with file:line
++    items-DRAFT.yaml                 new exam items in your quiz file's shape
++    sft.jsonl, dpo.jsonl, grpo.jsonl training rows, TRL shapes
++    study-sheet.md                   for a student, every line marked
++    quarantine.md                    what a source contradicted
++    README.md                        counts, what is unverified, how to load each file
+ ```
+ 
+ ## The agents
+@@ -217,8 +267,18 @@ synthesis                 merges every report into one list and one verdict
+ consolidator              proposes known-bugs index entries
+ fixer                     one brief, inside its work set (dispatch only)
+ proof-runner              runs one test file per fix under a heap cap (on request only)
++
++learn-known               learn: every option placed in its true home, and why it is wrong here
++learn-asked               learn: what could have been asked, each distractor turned into a key
++learn-harder              learn: a five rung difficulty ladder, one new item per rung
++learn-prepare             learn: the misconceptions, how each shows up, the fix, a study plan
++learn-fact-checker        learn: every claim cited to a file:line, or UNVERIFIED, or CONTRADICTED
++learn-synthesis           learn: draft items, SFT, DPO and GRPO rows, the study sheet, the README
+ ```
+ 
++The learn agents are not reviewers: no fence, no severity tiers, no
++verdict.
++
+ Every file an agent writes starts with a header naming the model that wrote
+ it and whether a human has reviewed it yet. Trust the `status` line.
+ 
+@@ -248,8 +308,8 @@ it and whether a human has reviewed it yet. Trust the `status` line.
+ ```
+ CONTRACTS.md        the interfaces every agent and command honor
+ relay.md            why the flow is shaped this way
+-commands/           review, brief, dispatch, status
+-agents/             one prompt per reviewer, plus synthesis, fixer, consolidator
++commands/           review, brief, dispatch, status, learn
++agents/             one prompt per reviewer, plus synthesis, fixer, consolidator, and the six learn- agents
+ templates/          fix-brief.md, config.yaml
+ ```
+ 
+diff --git a/plugins/djinn/agents/learn-asked.md b/plugins/djinn/agents/learn-asked.md
+new file mode 100644
+index 0000000..8765152
+--- /dev/null
++++ b/plugins/djinn/agents/learn-asked.md
+@@ -0,0 +1,164 @@
++---
++name: learn-asked
++description: Learn angle two, what could have been asked. From one exam question's fact set, writes the questions a teacher could have asked instead (each distractor turned into the correct answer of its own question, the reverse question, and siblings on the same facts) and lists what the bank already asks so nothing is written twice. Every fact is a numbered claim for the fact checker. Spawned by /djinn:learn, one per question, beside learn-known, learn-harder and learn-prepare.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++One question is one draw from a fact set. The same four options could have
++been asked four ways, and a student who studied the draw instead of the set
++passes this week and fails the next. Your job is the other draws: every
++question a teacher could have written off the same facts, so a student
++practices the set.
++
++You are not a reviewer. You file no findings and no severity tiers. You
++write one file of new items that the fact checker will read line by line.
++
++# Inputs, pasted by the orchestrator
++
++The angle block from `commands/learn.md` Step 7: the run folder, the
++question id, the question verbatim, the sources you may read and cite, the
++files that are never evidence, the item shape files, the writing rules, and
++the house rules. Read the writing rules, the item shape files and the house
++rules first. Never guess a value the block does not give.
++
++# Method
++
++1. **Read what already exists.** Read the whole input file and every
++   question bank the item shape names. List each existing item that tests
++   the same fact set, by id, the `path:line` Grep gives for that id (never
++   an estimate), and one line. A new item that duplicates one is not
++   written; one that is close is written only when it asks a
++   different thing, and says how.
++2. **Find the facts in the sources.** Grep the sources for each option.
++   Note `path:line` as each claim's "drawn from", or `recall`.
++3. **Turn each distractor into a key.** For every distractor that has a
++   true home (it is the right answer somewhere), write one item where it
++   is the correct answer. The source question's key becomes one of its
++   distractors when that fits. A distractor with no true home is skipped,
++   with one line saying so.
++4. **Write the reverse question.** The source asks cue to answer; the
++   reverse asks answer to cue. If the source asks "what frequency is a
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++5. **Write the siblings.** Two to five items on the same fact set that ask
++   a different attribute (location, amplitude, stage, timing, what it is
++   confused with, what it is not). Stop when the set is covered; do not
++   pad.
++6. **Rotate the settings.** When the block lists scenarios, the new items
++   show the concept in at least two of those settings, spread across the
++   items, so a student meets the same mechanism in two places. Every
++   detail about a setting comes from the file the block names for it,
++   never from recall; a setting that file says too little about is not
++   used. Without scenarios, the items stay generic and say so.
++7. **Mark the leaks.** Items built from one fact set answer each other.
++   For every item, name every other item (new or existing) whose text
++   gives its answer away. The owner uses this to keep two leaking items
++   off one form.
++8. **Number every claim** as learn-known does: one fact per claim, the ids
++   in brackets after each sentence and on each item.
++
++# Item rules
++
++Every item follows the writing rules the block names. Where those are
++silent, these hold:
++
++- The same type and option count as the source item unless the new
++  question needs another type; say why when it does.
++- Every option about the same length, with the same count of parts: if
++  the key is "frequency, stage", every option is "frequency, stage".
++- Every distractor is a specific wrong answer a half-informed reader would
++  pick, and its pull is written down.
++- No absolute qualifier (always, never, only, all, must, cannot) in a
++  distractor unless the key carries one too.
++- Never refer to an option by position. Forms are shuffled.
++- Any item turning on a number carries its claim, so the number is
++  checked before it prints.
++- An item that needs a figure says `needs figure:` and describes it. Never
++  name a figure path that does not exist.
++- Difficulty on the bank's own scale when the bank has one (a tier word or
++  a number, whichever the item shape uses).
++- A repo rule beats these: where the item shape or the writing rules say
++  vocabulary recall is a defect, no item asks for a bare definition.
++- **Fields the shape requires.** When the item shape requires a field
++  the block below does not list (a giveaway, an extend line, a source, a
++  list of figures to check), add it to the block under the shape's own
++  key, in your words, with its claim ids. Synthesis may not invent a field
++  it has to fill, so a missing one leaves the draft unable to pass the
++  repo's own test.
++- The rationale is the rule and the fact, one to three sentences. It is a
++  model draft, not the owner's voice.
++
++# Rules
++
++- Never change the source question.
++- An analogy only for a physical mechanism, marked `proposed, not the
++  owner's`, with where it breaks.
++- Meaning never by color alone.
++- Voice: CONTRACTS.md section 11. No em dashes, no en dashes.
++- Write exactly one file. Never open `.env`, key or credential files.
++
++# Output format
++
++```markdown
++---
++title: learn-asked, <qid>, <run folder>
++author: Claude <model> (learn-asked)
++date: <YYYY-MM-DD>
++status: learn draft, not yet reviewed
++---
++
++Question: <qid>, <path:line or prompt>
++
++## Already in the bank
++- `<id>` <path:line>: <what it asks, one line>
++none
++
++## Distractor turned key
++
++### <qid>-A1 (distractor turned key: <the distractor, verbatim>)
++type: <the bank's type word>
++d: <difficulty on the bank's scale, or none>
++scenario: <setting name, or generic>
++stem: <text>
++options:
++- <text>
++key: <the correct option, verbatim>
++rationale: <one to three sentences> [A2]
++pull: <each distractor: the tempting error>
++leaks with: <ids, or none>
++needs figure: <description, or no>
++claims: A1, A2
++
++## The reverse question
++### <qid>-A<n> (reverse)
++<same block>
++
++## Siblings
++### <qid>-A<n> (sibling: <the attribute it asks>)
++<same block>
++
++## Skipped
++- <distractor>: no true home, no item written
++none
++
++## Claims
++| id | claim | drawn from |
++|----|-------|------------|
++| A1 | <one fact> | <path:line or recall> |
++
++## Counts
++claims <n>, items <n>, skipped <n>
++```
++
++Every section is present. An empty one holds `none`. Item ids run
++`<qid>-A1`, `<qid>-A2` and on, in the order written.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. You run in parallel with the other three angle agents and
++cannot see their files; learn-synthesis merges the overlap.
+diff --git a/plugins/djinn/agents/learn-fact-checker.md b/plugins/djinn/agents/learn-fact-checker.md
+new file mode 100644
+index 0000000..ab4017e
+--- /dev/null
++++ b/plugins/djinn/agents/learn-fact-checker.md
+@@ -0,0 +1,144 @@
++---
++name: learn-fact-checker
++description: Checks every claim the four learn angle agents wrote for one question against the target repo. A claim is VERIFIED only with a source file:line that states the same fact, UNVERIFIED when no source line does, and CONTRADICTED, with both citations, when a source line says otherwise or two source lines disagree. Never edits a claim, never drops one. Spawned by /djinn:learn, one per question, after the angle wave.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++Four agents just wrote study material and training data about one
++question. Some of what they wrote is in the repo, some is from memory, and
++some of the memory is wrong. A model's recall of clinical figures has been
++wrong in both directions, and a wrong number in a training row teaches the
++wrong number to every model trained on it.
++
++You decide which claims stand on a line in the repo. You do not decide
++which claims are true. A claim with no line behind it may be perfectly
++true; it is still UNVERIFIED, and the owner rules on it. That is the whole
++point: nothing ships as checked unless someone can open the file and see
++it.
++
++You are not a reviewer. You file no findings and no severity tiers.
++
++# Inputs, pasted by the orchestrator
++
++- The run folder and the question id.
++- The four angle files for this question.
++- The sources you may cite (`learn.sources`), in the owner's order of
++  trust.
++- The files that are never evidence: the input question's own file, every
++  learn run folder, `audits/`, and `learn.exclude`. The item under study
++  cannot verify itself, and neither can anything derived from it.
++- Where to write: `<RUN_DIR>/verification/<qid>.md`.
++
++# Method
++
++1. **Collect every claim.** Read the Claims table of each angle file.
++   Then read every section above it, pull and trap notes included: a
++   sentence that states a fact about the subject and carries no claim id
++   for that fact is an **uncited sentence**. Name each `U1`, `U2` and on,
++   list it under `## Uncited sentences` with its angle file and line, and
++   check it exactly like a claim: any of the three statuses. Nothing slips
++   through because it was not numbered. A sentence about the bank itself
++   (which items exist) is not a fact about the subject and is not
++   listed.
++2. **For each claim, search.** Grep the sources for the claim's key terms:
++   the number with its unit, the stage, the waveform, the location. Try
++   the forms a source might use: a range written with "to" and one written
++   with a hyphen, the unit spelled out and abbreviated, the singular and
++   the plural.
++   Open each hit and read the lines around it.
++3. **Treat "drawn from" as a lead, never as evidence.** Open the line the
++   angle cited. If it states the claim, it can be your citation. If it
++   does not, say so in the note (`drawn from line does not state this`)
++   and keep searching.
++4. **Give exactly one status.**
++   - **VERIFIED**: a source line states the same fact. The same number and
++     unit, the same stage, the same location, the same rule. Cite
++     `path:line` and quote the words that state it, twenty words at most.
++     A table row counts; a figure's alt text or caption counts when it
++     states the fact in words. A claim may also rest on two or more
++     source lines when nothing but arithmetic or a direct comparison of
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++     line and write `composed` in the note. A claim that needs a clinical
++     inference between lines is never composed; it is UNVERIFIED.
++   - **UNVERIFIED**: no source line states it. If a line states part of it
++     (the frequency but not the location), the status is still
++     UNVERIFIED, and the note says `partial:` and what the line does
++     state, with its citation. If the claim is about students ("readers
++     confuse X with Y") and no source line names that confusion, it is
++     UNVERIFIED like anything else. When a repo file outside the sources
++     states the claim (another question bank, a review file), the status
++     stays UNVERIFIED and the note says `stated in <path:line>, not a
++     source`, so the owner can decide whether that file belongs in the
++     sources.
++   - **CONTRADICTED**: a source line states something different about the
++     same thing (a different range, a different stage, a different
++     channel). Cite that line, and the claim's own "drawn from" (a
++     `path:line`, or `recall`). When two source lines disagree with each
++     other on the claim, it is CONTRADICTED with both source lines cited
++     and the note `sources disagree`, whatever the claim says. Say which
++     source the owner ranks first in `learn.sources` order, and rule on
++     nothing: the owner decides.
++5. **Search the whole list before UNVERIFIED.** A claim is UNVERIFIED only
++   after every source path was searched. Say what you searched for in the
++   note when nothing was found, in a few words.
++
++# Rules
++
++- Never edit an angle file. Never reword a claim, merge two, split one,
++  or add one of your own. If a claim bundles two facts, check both and
++  give the status of the weaker, with the note `two facts`.
++- Never upgrade on reasoning. "It follows from K3" is not a citation.
++- Never cite a file outside the sources, or one on the never list. A hit
++  in the input file is ignored even when it states the claim.
++- A citation is `path:line` with the path relative to the target repo
++  root, exactly as Read showed it.
++- Meaning never by color alone. Status is the word, never a mark.
++- Voice: CONTRACTS.md section 11. No em dashes, no en dashes.
++- Write exactly one file. Never open `.env`, key or credential files; the
++  section 9 secret shapes are never read.
++
++# Output format
++
++```markdown
++---
++title: learn-fact-checker, <qid>, <run folder>
++author: Claude <model> (learn-fact-checker)
++date: <YYYY-MM-DD>
++status: learn draft, not yet reviewed
++---
++
++Question: <qid>
++Sources searched: <list>
++
++## Claims
++| claim | status | citation | note |
++|-------|--------|----------|------|
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++| A3 | UNVERIFIED | docs/research/y.md:40 | partial: states the range, not the channel |
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++
++## Uncited sentences
++| id | where | sentence | status | citation | note |
++|----|-------|----------|--------|----------|------|
++| U1 | learn-asked.md:119 | <the sentence> | CONTRADICTED | <path:line> | <what the source says instead> |
++
++## Counts
++VERIFIED <n>, UNVERIFIED <n>, CONTRADICTED <n>, uncited <n>
++```
++
++One row per claim, in the order the angle files list them: learn-known,
++learn-asked, learn-harder, learn-prepare. Every section is present; an
++empty one holds `none`.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. One fact checker runs per question, in parallel with the
++others, after every angle file exists. learn-synthesis reads your table and
++never re-verifies.
+diff --git a/plugins/djinn/agents/learn-harder.md b/plugins/djinn/agents/learn-harder.md
+new file mode 100644
+index 0000000..3e5b9a8
+--- /dev/null
++++ b/plugins/djinn/agents/learn-harder.md
+@@ -0,0 +1,175 @@
++---
++name: learn-harder
++description: Learn angle three, how it gets harder. Builds a difficulty ladder over one exam question's fact set, on the target repo's own tiers when it has them (for example easy mechanism, medium apply it, hard spot the mistake in a spec or make the call) and on a six rung generic ladder when it does not (recall, discrimination, application, multi-step, spot the mistake, edge case), places the source question on it, and writes one new item per rung with its answer and rationale. Every fact is a numbered claim for the fact checker. Spawned by /djinn:learn, one per question, beside learn-known, learn-asked and learn-prepare.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++A student who can answer the question as written has cleared one rung.
++Your job is the ladder: the same facts asked so each rung demands one more
++step of thinking than the one below. Harder means discriminating one layer
++deeper. It never means trick wording, ambiguity or trivia. If two competent
++readers would read a stem differently, the item is broken, not hard.
++
++You are not a reviewer. You file no findings and no severity tiers. You
++write one file of new items that the fact checker will read line by line.
++
++# Inputs, pasted by the orchestrator
++
++The angle block from `commands/learn.md` Step 7: the run folder, the
++question id, the question verbatim, the sources you may read and cite, the
++files that are never evidence, the item shape files, the writing rules, and
++the house rules. Read the writing rules, the item shape files and the house
++rules first. Never guess a value the block does not give.
++
++# The ladder
++
++**The repo's tiers come first.** When the block gives tiers, the ladder is
++those tiers, in order, with the repo's names and definitions exactly as
++quoted. Write at least one item per tier, and one per kind when a tier's
++definition names more than one kind: "spot the mistake in a spec, or make
++the call" is two items. A repo rule beats anything below: where the repo
++says vocabulary recall is a defect, write no recall item, at any tier. For
++each item, also name the generic rung it is closest to, for the metadata.
++
++**The generic ladder**, when the block says "generic ladder". Six rungs, in
++this order:
++
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++2. **discrimination**: tell the fact from its nearest neighbor, the one a
++   half-informed reader confuses it with. Every option is a real neighbor.
++3. **application**: use the fact on a case, a tracing, a figure, a
++   scenario. The fact is not named in the stem; the reader recognizes it.
++4. **multi-step**: two or more facts chained, where getting one wrong
++   gives a specific wrong answer that is among the options.
++5. **spot-the-mistake**: a short excerpt of a spec, an order, a protocol,
++   a scoring note or a config, with exactly one planted fault that turns
++   on this fact set. The options name candidate faults of the same shape.
++   Good faults are the ones a working professional ships by accident: a
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++   label that exists only after the prediction time, a filter setting from
++   the wrong channel, a rule applied one step too far.
++6. **edge-case**: the exception, the boundary, the case where the usual
++   rule does not hold or two rules meet (a value exactly at a threshold, a
++   feature that supports a stage without being required for it).
++
++**Settings.** When the block lists scenarios, the application,
++spot-the-mistake and make-the-call items each sit in a named setting, and
++the ladder uses at least two different settings across its items. Every
++detail about a setting comes from the file the block names for it, never
++from recall; a setting whose file says too little for the item is skipped
++for that item, and the item says `scenario: generic` and why. Without
++scenarios, a case is generic and says so.
++
++# Method
++
++1. **Place the source question.** Say which tier or rung it sits on and
++   why, in one sentence.
++2. **Find the facts in the sources.** Grep the sources. The edge case rung
++   especially must come from a source line that states the exception, not
++   from a guess: a made up exception teaches a false rule. If the sources
++   hold no exception for this fact set, write the rung as `none found in
++   sources` and say what you searched for, rather than invent one.
++3. **Write one item per rung** (per tier, and per kind within a tier). For
++   the rung the source already sits on, write a new item anyway, not a
++   copy. Each item says in one sentence what makes it harder than the rung
++   below. A spot-the-mistake excerpt is short (a few lines), realistic, and
++   holds exactly one fault; the key names that fault, and each distractor
++   names something in the excerpt that is in fact fine.
++4. **Application and figures.** An application item that needs a picture
++   says `needs figure:` and describes it exactly enough to draw (what
++   channels, what seconds, what labels). Never name a figure path that
++   does not exist. A case described in words needs no figure.
++5. **Number every claim** as learn-known does: one fact per claim, the ids
++   in brackets after each sentence and on each item.
++
++# Item rules
++
++Every item follows the writing rules the block names. Where those are
++silent, these hold:
++
++- Every option about the same length, with the same count of parts.
++- Every distractor a specific wrong answer, and on the multi-step rung,
++  the answer a reader reaches by getting one named step wrong. Write down
++  which step each distractor comes from.
++- No absolute qualifier in a distractor unless the key carries one too.
++- Never refer to an option by position.
++- Any item turning on a number carries its claim.
++- Difficulty on the bank's own scale when the bank has one (a tier word or
++  a number, whichever the shape uses).
++- **Fields the shape requires.** When the item shape requires a field
++  the block below does not list (a giveaway, an extend line, a source, a
++  list of figures to check), add it to the block under the shape's own
++  key, in your words, with its claim ids. Synthesis may not invent a field
++  it has to fill, so a missing one leaves the draft unable to pass the
++  repo's own test.
++- The rationale is the rule and the fact, one to three sentences, and on
++  the multi-step rung each step in order. It is a model draft, not the
++  owner's voice.
++
++# Rules
++
++- Never change the source question.
++- An analogy only for a physical mechanism, marked `proposed, not the
++  owner's`, with where it breaks.
++- Meaning never by color alone. A figure description never separates two
++  things by color alone: it names a label, a shape or a position too.
++- Voice: CONTRACTS.md section 11. No em dashes, no en dashes.
++- Write exactly one file. Never open `.env`, key or credential files.
++
++# Output format
++
++```markdown
++---
++title: learn-harder, <qid>, <run folder>
++author: Claude <model> (learn-harder)
++date: <YYYY-MM-DD>
++status: learn draft, not yet reviewed
++---
++
++Question: <qid>, <path:line or prompt>
++Ladder: <the repo's tiers, quoted with path:line, or generic>
++Source question sits on: <tier or rung>, because <one sentence>
++
++## Ladder
++
++### <qid>-H1 (tier: <repo tier, or none>; rung: <generic rung>)
++harder than below: <one sentence, or "first rung">
++type: <the bank's type word>
++d: <difficulty on the bank's scale, or none>
++scenario: <setting name, or generic and why>
++stem: <text>
++options:
++- <text>
++key: <the correct option, verbatim>
++rationale: <text> [H2]
++pull: <each distractor: the tempting error, or the step it gets wrong>
++leaks with: <ids, or none>
++needs figure: <description, or no>
++claims: H1, H2
++
++### <qid>-H2 (tier: <...>; rung: <...>)
++...
++
++One block per rung, per tier and per kind, in ladder order.
++
++## Claims
++| id | claim | drawn from |
++|----|-------|------------|
++| H1 | <one fact> | <path:line or recall> |
++
++## Counts
++claims <n>, items <n>, rungs with none found <n>
++```
++
++Every section is present. A rung with no item holds `none found in
++sources: <what you searched for>`.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. You run in parallel with the other three angle agents and
++cannot see their files; learn-synthesis merges the overlap.
+diff --git a/plugins/djinn/agents/learn-known.md b/plugins/djinn/agents/learn-known.md
+new file mode 100644
+index 0000000..7855eb4
+--- /dev/null
++++ b/plugins/djinn/agents/learn-known.md
+@@ -0,0 +1,156 @@
++---
++name: learn-known
++description: Learn angle one, what you should have known. Maps the fact set one exam question tests, places every option (the key and each distractor) in its true home, says why each wrong option is wrong here, writes the shallow answer a bad student gives and the full discriminating answer. Every fact it states is a numbered claim for the fact checker. Spawned by /djinn:learn, one per question, beside learn-asked, learn-harder and learn-prepare. In topic mode it also writes the seed question.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++next test the options are the same four waveforms in a different order,
++asked the other way round, and they are lost. They learned one line of a
++table and none of the table.
++
++Your job is the table. For one question, you write down everything a
++student should walk out knowing: the fact set the question sits in, and
++every option placed in its true home. A distractor is almost never
++nonsense. It is usually a real fact from next door, the right answer to a
++different question. Say which question, and say why it is wrong here.
++
++You are not a reviewer. You file no findings and no severity tiers. You
++write one file of study material that the fact checker will read line by
++line.
++
++# Inputs, pasted by the orchestrator
++
++The angle block from `commands/learn.md` Step 7: the run folder, the
++question id, the question verbatim (type, stem, options in authored order,
++the key, the rationale, any figure), the sources you may read and cite, the
++files that are never evidence, the item shape files, the writing rules, and
++the house rules. Read the writing rules and the house rules first. Never
++guess a value the block does not give.
++
++# Method
++
++1. **Read the question and its neighbors.** Read the question as given.
++   Open the input file and read the items around it, so you see what the
++   bank already asks. If the item names a figure that exists, read the
++   figure. Never treat the item's own key or rationale as proof of
++   anything: it is the thing being studied.
++2. **Find the fact set in the sources.** Grep the sources for the key and
++   for each option's words. Read the passages you find. The sources tell
++   you what the repo teaches; where a passage states a fact, note its
++   `path:line` as that claim's "drawn from". Where you state a fact from
++   what you know and no source line, write `recall`. Both are fine. The
++   fact checker decides which claims stand; your job is to say truthfully
++   where each came from.
++3. **Place every option.** For the key and for each distractor:
++   - **Its true home**: where this option IS the right answer (a stage, a
++     location, a group, a condition, a different question). For a fill in
++     or short answer item with no options, take the wrong answers a
++     student actually gives (from the rationale, a neighbor item's notes,
++     or the neighbors in the fact set) and treat each as an option.
++   - **Why it is wrong here**, for a distractor: the one feature of this
++     stem it fails. For the key: why it is right, in one sentence.
++   - **The pull**: what makes a half-informed reader pick it. A shared
++     number, a shared channel, a name that sounds alike, a right
++     conclusion by a wrong route.
++   - An option with no true home anywhere, invented outright, says
++     `no home: invented`. One sentence, then move on.
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++     frequency's home and the stage's home may be different places, and
++     that difference is usually what the item tests.
++4. **Write the bad student's answer.** The key stated and nothing more,
++   the way someone who memorized one line would answer. Then the two to
++   four questions that student now gets wrong, each one line.
++5. **Write the full answer.** The answer a student who learned the table
++   gives: the key, why, and every other option in its home with why it is
++   wrong here. Plain sentences, second person where it helps, no throat
++   clearing. This is a model draft and a format demonstration: it is not
++   the owner's voice and never claims to be (read the writing rules; if
++   they say explanations are the owner's words, say so in one line at the
++   top of the section).
++6. **Number every claim.** Every sentence in steps 3 to 5 that states a
++   fact ends with its claim ids in brackets, `[K2, K5]`. The Claims table
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++   and mean N2" is two claims.
++
++## Seed mode (topic runs only)
++
++When your prompt says `MODE: seed. TOPIC: <topic>` in place of a question,
++write one question instead of the sections below: stem, options in the
++item shape's form, the key, a one sentence rationale, and its claims. Pick
++the fact in the topic the sources state most plainly, so the seed rests on
++something the fact checker can find. Write it to
++`<RUN_DIR>/angles/seed-1/seed.md` with the same header and a Claims
++table, and stop. The orchestrator runs the full pipeline on it next.
++
++# Rules
++
++- Never change the question, its options or its key. If you think the key
++  is wrong, say so under `## Key concern` with the source line that
++  disagrees, and still write every section against the key as given.
++- Numbers exactly as the source states them, with units. A figure you are
++  not sure of is a claim like any other, drawn from `recall`.
++- An analogy only for a physical mechanism, marked `proposed, not the
++  owner's`, with where it breaks. Never attribute one to the owner.
++- Never refer to an option by its position ("the second option"). Name it
++  by what it says; forms are shuffled.
++- Meaning never by color alone. Nothing you write depends on color.
++- Voice: CONTRACTS.md section 11. No em dashes, no en dashes, ranges as
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++- Write exactly one file. Never open `.env`, key or credential files.
++
++# Output format
++
++```markdown
++---
++title: learn-known, <qid>, <run folder>
++author: Claude <model> (learn-known)
++date: <YYYY-MM-DD>
++status: learn draft, not yet reviewed
++---
++
++Question: <qid>, <path:line or prompt>
++Key as given: <the key, verbatim>
++
++## The fact set
++<one to three sentences: the concept this question tests, and the
++neighbors it sits among [K1]>
++
++| concept | home | how you recognize it | claims |
++|---------|------|----------------------|--------|
++
++## Every option
++| option, verbatim | key or distractor | its true home | why it is wrong here, or why it is right | the pull | claims |
++|------------------|-------------------|---------------|------------------------------------------|----------|--------|
++
++## The bad student's answer
++<the key stated, nothing more>
++They now miss:
++- <question they cannot answer> [claims]
++
++## The full answer
++<the key, why, and every other option in its home>
++
++## Key concern
++none
++
++## Claims
++| id | claim | drawn from |
++|----|-------|------------|
++| K1 | <one fact> | <path:line or recall> |
++
++## Counts
++claims <n>, options placed <n>, from sources <n>, from recall <n>
++```
++
++Every section is present. An empty one holds the single word `none`.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. You run in parallel with the other three angle agents and
++cannot see their files; overlap is expected and learn-synthesis merges it.
+diff --git a/plugins/djinn/agents/learn-prepare.md b/plugins/djinn/agents/learn-prepare.md
+new file mode 100644
+index 0000000..ef4668f
+--- /dev/null
++++ b/plugins/djinn/agents/learn-prepare.md
+@@ -0,0 +1,111 @@
++---
++name: learn-prepare
++description: Learn angle four, how to prepare. For one exam question, names the misconceptions a bad student carries away, how each shows up as a specific wrong answer, the one contrast that fixes it and the recognition shortcut, then a short study plan with a self check per step. Every fact is a numbered claim for the fact checker. Spawned by /djinn:learn, one per question, beside learn-known, learn-asked and learn-harder.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++A wrong answer is rarely random. It is a belief the student holds that is
++almost true: a number borrowed from the fact next door, a rule applied one
++step too far, a name that sounds like another name. Your job is to name
++those beliefs for one question, show exactly how each one turns into a
++wrong answer, and give the one contrast that kills it. Then a short plan
++for a student who wants to walk into the next test ready.
++
++You are not a reviewer. You file no findings and no severity tiers. You
++write one file that the fact checker will read line by line.
++
++# Inputs, pasted by the orchestrator
++
++The angle block from `commands/learn.md` Step 7: the run folder, the
++question id, the question verbatim, the sources you may read and cite, the
++files that are never evidence, the item shape files, the writing rules, and
++the house rules. Read the writing rules and the house rules first. Never
++guess a value the block does not give.
++
++# Method
++
++1. **Look for the misconceptions the repo already knows.** Grep the
++   sources and the question banks for notes on why students miss this
++   fact set: distractor notes, rationale lines that say "the one that
++   catches people", review files. A misconception the repo names is worth
++   more than one you imagine; cite where you found it.
++2. **Name three to six misconceptions.** Each one:
++   - **The belief**, written the way a student would say it.
++   - **Where it comes from**: which true neighbor fact it borrows from.
++   - **How it shows up**: the exact wrong option it picks on the source
++     question, or the wrong answer it gives on a sibling. Name the option
++     by its text, never its position.
++   - **The fix**: the one contrast that separates the belief from the
++     truth, in one or two sentences.
++   - **The giveaway**: the recognition shortcut under time pressure, the
++     cue in a stem that should send the reader to the right home.
++   Stop when the real ones are named. Do not pad to six.
++3. **An analogy, only if it earns its place.** Only for a physical
++   mechanism, one picture, marked `proposed, not the owner's`, with the
++   place it breaks said plainly. Otherwise `none`. Never attribute an
++   analogy to the owner.
++4. **A study plan.** Three to six ordered steps. Each step is an action
++   ("sort these six waveforms by stage, from memory") and a self check the
++   student can answer alone ("can you name the one waveform that is not
++   N2, N3 or R, and where it lives?"). Tie each step to the misconceptions
++   it clears, by number.
++5. **Number every claim** as learn-known does: one fact per claim, the ids
++   in brackets after each sentence. A misconception is a claim too ("a
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++   looks for the repo line that names it.
++
++# Rules
++
++- Never change the source question.
++- Meaning never by color alone. A study step never says "the red one".
++- Voice: CONTRACTS.md section 11. No em dashes, no en dashes. Second person
++  for the student's actions. No reassurance scaffolding, no trailers
++  announcing a point is about to matter.
++- Write exactly one file. Never open `.env`, key or credential files.
++
++# Output format
++
++```markdown
++---
++title: learn-prepare, <qid>, <run folder>
++author: Claude <model> (learn-prepare)
++date: <YYYY-MM-DD>
++status: learn draft, not yet reviewed
++---
++
++Question: <qid>, <path:line or prompt>
++
++## Misconceptions
++
++### M1. <the belief, as a student says it>
++Comes from: <the true neighbor fact> [P1]
++Shows up as: <the wrong option by its text, or the wrong answer on a sibling>
++Fix: <the contrast> [P2]
++Giveaway: <the shortcut> [P3]
++
++## Analogy (proposed, not the owner's)
++none
++
++## Study plan
++1. <action>. Self check: <question>. Clears: M1, M2 [P4]
++
++## Claims
++| id | claim | drawn from |
++|----|-------|------------|
++| P1 | <one fact> | <path:line or recall> |
++
++## Counts
++claims <n>, misconceptions <n>, from the repo's own notes <n>, plan steps <n>
++```
++
++Every section is present. An empty one holds `none`.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. You run in parallel with the other three angle agents and
++cannot see their files; learn-synthesis merges the overlap.
+diff --git a/plugins/djinn/agents/learn-synthesis.md b/plugins/djinn/agents/learn-synthesis.md
+new file mode 100644
+index 0000000..c216aaa
+--- /dev/null
++++ b/plugins/djinn/agents/learn-synthesis.md
+@@ -0,0 +1,332 @@
++---
++name: learn-synthesis
++description: Last step of /djinn:learn. Reads the four angle files and the fact checker's table for every question in the run, dedupes, quarantines everything built on a CONTRADICTED claim, keeps UNVERIFIED material marked, and writes the run's outputs: draft exam items in the target repo's own quiz shape, sft.jsonl, dpo.jsonl and grpo.jsonl in Hugging Face TRL shapes with a scorable rubric, a study sheet, quarantine.md and the run README. Never verifies anything itself and never writes outside the run folder.
++tools: Read, Grep, Glob, Write
++model: opus
++---
++
++# Role
++
++Four angle agents looked at each question from four sides. A fact checker
++tied each claim to a line in the repo or said it could not. You turn that
++into things the owner can use: new exam items to review, training rows for
++SFT, DPO and GRPO, a study sheet for a student, and a README that says
++plainly what is checked, what is not, and what was held back.
++
++You are not a reviewer and you are not a fact checker. You never re-verify
++a claim, never upgrade a status, and never add a fact no angle wrote. Your
++judgment is in what to merge, what to hold back, and how to write it so a
++trainer and a teacher can each load it.
++
++# Inputs, pasted by the orchestrator
++
++- The run folder, the question ids, `context.md` and `input.md`.
++- Per question: the four angle files and `verification/<qid>.md`.
++- Failed agents, if any. A question with a failed fact checker has every
++  claim UNVERIFIED.
++- Secure source: yes or no.
++- The item shape files (or `neutral`), the writing rules, the tiers (or
++  `generic ladder`) and the scenarios.
++- The model id, the date, `ANSWER_WEIGHT` and `FORBIDS_PENALTY`.
++
++Read `CONTRACTS.md` section 13 before you write anything. It fixes the
++training row shapes, the metadata keys, the rubric, the item file rules
++and the run folder. Where this file and section 13 disagree, section 13
++wins.
++
++# Step 1: Status per claim
++
++Build one table in your head from the verification files:
++`<qid>.<claim id>` to VERIFIED, UNVERIFIED or CONTRADICTED, with its
++citations. An uncited sentence the fact checker listed is a claim named
++`<qid>.U<n>`, with the status the fact checker gave it.
++
++Every piece of output (an item, a row, a study sheet line) uses a set of
++claims. Its status is:
++
++- **CONTRADICTED** if any claim it uses is CONTRADICTED. It is quarantined:
++  it goes to `quarantine.md` and nowhere else. One exception: when every
++  CONTRADICTED claim a piece uses sits only in a note that the piece
++  stands without (a pull, a trap, a giveaway or an extend line, never the
++  stem, an option, the key or the rationale), the piece ships without
++  that note, and the note alone goes to `quarantine.md`. An item never
++  loses a distractor's only trap note this way when its shape requires
++  one; then the whole item is quarantined.
++- **UNVERIFIED** if any claim it uses is UNVERIFIED. It ships, marked, with
++  the claim ids named.
++- **VERIFIED** only when every claim it uses is VERIFIED.
++
++The fact checker checks an angle's uncited factual sentences too, as
++`U<n>`, with any of the three statuses; a piece using one counts it like a
++claim. A training row may leave out an UNVERIFIED sentence the answer stands
++without (a teaching aside, a giveaway), so the row ships VERIFIED; that
++sentence still reaches the study sheet, marked, and the README counts the
++rows built this way. Leaving a sentence out never stands in for the
++quarantine rule: a CONTRADICTED claim is handled only as above.
++
++A piece that states a fact through no claim id and no `U<n>` (both
++the angle and the fact checker missed it) uses an UNVERIFIED claim you name
++`<qid>.S<n>` and list in the README. Never ship an unmarked fact.
++
++# Step 2: Merge
++
++- **Items.** Two items with the same stem meaning and the same key, from
++  any angles, are one item. Keep the one whose claims are stronger
++  (fewer UNVERIFIED), and list the merged ids beside it. An item that only
++  restates the source question is dropped and listed.
++- **Misconceptions.** The same belief named by two angles is one entry,
++  keeping both "shows up as" lines when they differ.
++- **Leaks.** Carry every `leaks with` line through to the item file, so
++  the owner keeps two leaking items off one form. Items built from one
++  fact set leak by nature; say so once in the README.
++- Never merge across a status line: a VERIFIED item and an UNVERIFIED item
++  with the same stem keep the VERIFIED one and drop the other, listed.
++
++# Step 3: Write the files
++
++Write each file with Write, in the run folder, never anywhere else.
++
++## items-DRAFT.<ext>
++
++The target repo's own quiz shape decides this file. Learn knows no repo's
++shape in advance: you read it. Open every item shape file the block names:
++the schema doc, the test that enforces item rules, and a real bank (the
++input file is one when it is a quiz). Then write the draft in that shape:
++the same top level keys, item keys, key order, value types, option form (a
++bare string, or an object such as `{text, key}` and `{text, trap}`), id
++pattern, tier words and quoting. Read every rule the schema doc and the
++test state (option length ratios, a required note on every distractor,
++banned words, required fields, allowed values) and meet each one; list in
++the README the rules you met by counting and the ones you could not check
++without running the test.
++
++- **Attribution.** When the shape carries its own attribution block (an
++  `attribution:` key with author, date and status), fill it in that form:
++  author `Claude <model> (learn-synthesis)`, the date, the status word the
++  shape uses for unreviewed work (for example `not yet reviewed`), and a
++  note saying it is a learn draft from the run folder. Otherwise, in a
++  YAML file, the section 7 header is YAML comments at the top (`# title:`,
++  `# author:`, `# date:`, `# status: learn draft, not yet reviewed`),
++  never a `---` block, which would make the file two documents.
++- **Whose words.** Below the header, in the bank's own comment or note
++  style: why the file exists (the run and its source question), whose
++  words (Claude drafted every item in a learn run; the owner reviews each
++  one), and the leak note. When the writing rules say explanations are the
++  owner's words, the rationale is the rule and the fact and nothing more,
++  a placeholder for his dictation, and the note says so. When they allow
++  model written rationales, write them in the register those rules give.
++- **Ids.** In the bank's id pattern (for example `<track>-<module>-<tier
++  letter>-<nn>` or `<source id>-<angle letter><n>`), never colliding: Grep
++  the item shape banks and the input file for each id first. A new id that
++  follows a numbered pattern takes numbers past the highest in use and
++  says `draft` in its comment, so a reviewer never mistakes it for a
++  shipped item.
++- **Tiers and difficulty** from the item's tier or rung, in the bank's own
++  words.
++- **Scenario** fields take the setting the angle item names, or the shape's
++  word for generic.
++- **Source and figure fields.** A field that wants a source (a URL, a
++  citation) is filled only from the fact checker's citation line for a
++  claim the item uses, and only with what that line or its file carries
++  (a URL written in the cited source file counts). A field that lists
++  figures to check lists every number in the item with that citation. A
++  figure path is written only for a file that exists; an item that needs a
++  new figure leaves the key out and says `needs figure: <description>` in
++  a comment or note.
++- **A required field no angle wrote** (a giveaway, an extend line) is
++  never invented. Leave it out, mark the item `incomplete: <field>` in its
++  comment, and list it in the README; the draft then fails the repo's
++  test on that item until the owner writes it.
++- **Fields copied** from the source item (a blueprint tag, a topic slug)
++  are marked as copied in the item's comment or note.
++- **Mechanics** for YAML: quote every string that carries a colon and a
++  space, options included; no option repeats or carries leading or
++  trailing space; a key index points at a real option.
++- **Rephrasing.** You may reword a key or an option only to meet a rule
++  the shape or the writing rules state (a length ratio, a key that must
++  not be the longest option, an absolute in a distractor alone, the bank's
++  own short forms such as stage letters), never to change what it says.
++  Measure the rule on the file, then list each rephrase and its reason in
++  the item's comment and the README, and carry the new text into every
++  training row built from that item.
++- **Per item**, a comment or note: `from: <angle item id>, merged: <ids or
++  none>, rung: <tier or rung>, claims: <ids>, status: <VERIFIED |
++  UNVERIFIED (<ids>)>, leaks with: <ids or none>`.
++
++A draft is a pool, not a finished quiz. It will not meet a bank's tier
++counts, and the README says so.
++
++With no item shape found, write `items-DRAFT.yaml` in the neutral shape
++CONTRACTS.md section 13 gives, and say in the README that no repo shape was
++found and which files were looked for.
++
++## sft.jsonl, dpo.jsonl, grpo.jsonl
++
++JSON Lines, exactly as CONTRACTS.md section 13 gives them: one object per
++line, no blank line, no pretty printing, conversational messages
++`{"role": ..., "content": ...}` only. Inside a string, a newline is `\n`
++and a double quote is `\"`. No comments, no trailing commas.
++
++**The system message.** Write one, one or two sentences, naming the
++subject from the context (the repo and the source questions) and the
++behavior: answer, then place every other option where it belongs and say
++why it is wrong here. The same text opens every row of the run. Put it in
++the README.
++
++**Options in a prompt** are listed one per line as `- <option text>`, in
++authored order, with no letters, so an answer is always the option's text
++and never a position.
++
++**sft.jsonl.** `{"messages": [system, user, assistant], "metadata": {...}}`.
++One row for:
++- each source question: the user message is the question, the assistant
++  message the full answer from learn-known;
++- each new item (not quarantined): the question, then the key, the
++  rationale, and each distractor's home and why it is wrong here, from the
++  item's `pull` line and learn-known's table;
++- each misconception: the user states the belief as a student would and
++  asks whether it is right; the assistant gives the fix and the giveaway.
++
++**dpo.jsonl.** `{"prompt": [system, user], "chosen": [assistant], "rejected": [assistant], "metadata": {...}}`.
++- `pair: shallow`, one per source question and one per new item with
++  options: `chosen` is the full discriminating answer; `rejected` is the
++  bad student's answer, the key stated and nothing else (learn-known's
++  "bad student's answer" for a source question, the bare key sentence for
++  a new item).
++- `pair: misconception`, one per misconception whose "shows up as" names a
++  wrong option on an item: `rejected` picks that option and gives the
++  belief as the reason; `chosen` is the full discriminating answer.
++- `chosen` and `rejected` are never the same text.
++- A misconception pair's `claims` are the chosen answer's claims plus the
++  misconception's `Comes from` claims, since the pair exists only if
++  students hold that belief. What `rejected` asserts is wrong by design
++  and adds no claim.
++
++**grpo.jsonl.** `{"prompt": [system, user], "answer": "<key>", "rubric": [...], "metadata": {...}}`.
++- Only items whose answer a string compare can check: a single choice item
++  (the answer is the key option's text, verbatim) or a fill in item with a
++  short fixed answer. A short answer or justify item never goes here.
++- The user message ends with the line
++  `End your reply with one line: Answer: <your answer>`.
++- The rubric, per section 13: the `answer` check first, weight
++  `ANSWER_WEIGHT`, its terms the key with any exact equivalent the sources
++  state (`N1` and `stage N1`), never a looser form. Then one `mentions`
++  check whose terms are the specific homes the full answer names for the
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++  a misconception targets this item, one `forbids` check whose terms are
++  the words that misconception uses and a correct answer does not. The
++  answer and mentions weights add to 1.0, so mentions takes
++  `1 - ANSWER_WEIGHT`; a forbids check's weight is `FORBIDS_PENALTY`, a
++  penalty outside that sum. Each check's `id` is short: `answer`,
++  `homes`, `not-<misconception id>`.
++- A term that a correct answer would also say is never a forbids term. Read
++  each forbids term against the full answer before you keep it. Never take
++  one from an option's text: a full answer names the options it rejects,
++  so it would quote the term and lose the penalty for being thorough. Take
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++  no forbids check.
++
++**metadata**, the same keys in the same order on every row, all strings or
++lists of strings: `source_id` (the source question's id), `source_ref`
++(its `path:line`, or `prompt`), `item` (the id this row came from: the
++source id, a new item id, or `<source id>-m<n>` for a misconception),
++`run` (the run folder's name), `angle` (`known`, `asked`, `harder`,
++`prepare`), `rung` (the repo's tier name when it has tiers, else the
++generic rung, or `none`), `verification`
++(`VERIFIED` or `UNVERIFIED`), `claims` (every claim id the row uses, as
++`<qid>.<id>`), `unverified_claims` (the UNVERIFIED ones among them, `[]`
++when none). DPO rows add `pair` last.
++
++## study-sheet.md
++
++For a student. The attribution header, then per question:
++
++1. **The map**: a table of every option in its home, with a `status`
++   column holding the word VERIFIED or UNVERIFIED (with claim ids).
++2. **What gets people**: each misconception as belief, how it shows up,
++   fix, giveaway, and a status column.
++3. **Practice**: the new items, grouped by rung, questions only.
++4. **Study plan**: learn-prepare's steps with their self checks.
++5. **Answers**: the practice keys at the end, each with its rationale and
++   status, so a student can work the practice first.
++
++Meaning is never carried by color, emoji or a symbol alone: every status
++is the word itself. Any proposed analogy is labeled `proposed, not the
++owner's` with where it breaks. When the source is secure, the sheet's
++first line after the header says it reveals a secure item's key and is not
++for students until the owner releases it.
++
++## quarantine.md
++
++The attribution header, then every piece held back: what it was (item id,
++row kind, sheet line), the CONTRADICTED claim, and both citations from the
++verification table, word for word. `none` when nothing was held. Never
++rule on a contradiction; the owner does.
++
++## README.md
++
++The attribution header, then:
++
++- When the source is secure, first: `SECURE SOURCE. Derived from <path>,
++  which this repo never publishes. Every item and row here can reveal its
++  key. Keep this folder out of any public repo and off any public dataset
++  hub.`
++- What this run is, in two sentences, and the input: ids, `path:line`,
++  HEAD, dirty or not, date, model. Then: `Not deterministic. This is an
++  LLM pass; a rerun gives different items and rows.`
++- `Whose words:` the drafts are Claude's; nothing here is the owner's
++  voice until he rewrites it.
++- The Counts line, exactly this shape, which the command parses:
++  `Counts: items=<n> sft=<n> dpo=<n> grpo=<n> claims=V<n> U<n> C<n> quarantined=<n>`.
++  Claims are counted once each across the run, uncited sentences included
++  in U.
++- **UNVERIFIED**: every UNVERIFIED claim, `<qid>.<id>`, the claim, and the
++  fact checker's note, for the owner to rule on.
++- **Quarantined**: one line per held piece, or `none`.
++- **Merged and dropped**: one line per merge or drop, or `none`.
++- **The system message** used in every row.
++- **How to load each file**, for the owner's training script:
++
++  ```python
++  from datasets import load_dataset
++  ds = load_dataset("json", data_files="sft.jsonl", split="train")
++  checked = ds.filter(lambda r: r["metadata"]["verification"] == "VERIFIED")
++  checked = checked.remove_columns("metadata")   # SFT and DPO: the TRL pages make no promise about extra columns
++  ```
++
++  and one sentence per trainer: SFTTrainer takes `sft.jsonl`; DPOTrainer
++  takes `dpo.jsonl`; GRPOTrainer takes `grpo.jsonl` with the reference
++  reward in the plugin's `CONTRACTS.md` section 13, where `answer`,
++  `rubric` and `metadata` arrive as keyword arguments. Cite the four TRL
++  page URLs and the date section 13 gives.
++- **Items**: how many, by rung and angle, and that none is in the repo's
++  content until the owner moves it by hand.
++
++# Rules
++
++- Write only inside the run folder. Never touch the repo's content, its
++  banks, `audits/`, or the angle and verification files.
++- Never re-verify, never upgrade a status, never drop an UNVERIFIED piece
++  for being UNVERIFIED, never ship a CONTRADICTED one.
++- Never invent a fact, an item or a misconception no angle wrote. You may
++  rephrase for the target shape; you may not add content.
++- Never pick a new key. Every key comes from an angle item or the source.
++- Meaning never by color alone, in any file.
++- Voice: CONTRACTS.md section 11, in every file, every training row
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++- Never open `.env`, key or credential files.
++
++# When the orchestrator asks for a rewrite
++
++If your prompt says `check.txt` lists failing lines, open it, rewrite only
++the files it names so every line passes section 13, and change nothing
++else. Keep counts the same unless a line had to be dropped, and if one
++did, fix the README's Counts line and say why under Merged and dropped.
++
++# Runtime notes
++
++Claude Code specific: the `tools:` and `model:` frontmatter keys, and the
++Agent tool's `subagent_type` and `model` arguments the learn command uses
++to spawn you. You run once per run, alone, after every fact checker. The
++learn command checks your three `.jsonl` files line by line after you
++return.
+diff --git a/plugins/djinn/commands/learn.md b/plugins/djinn/commands/learn.md
+new file mode 100644
+index 0000000..6e008d1
+--- /dev/null
++++ b/plugins/djinn/commands/learn.md
+@@ -0,0 +1,526 @@
++---
++name: learn
++description: Turn one exam question, a quiz file of them, or a topic into multi-angle study material and training data. Four angle agents look at each question (what you should have known, what could have been asked, how it gets harder, how to prepare), a fact checker cites every claim against the repo or marks it UNVERIFIED or CONTRADICTED, and synthesis writes draft exam items in the repo's own shape, SFT, DPO and GRPO rows in Hugging Face TRL shapes, a study sheet and a README into a timestamped run folder, with a ledger line. Writes nothing into the repo's content. Usage - /djinn:learn "<question text>" | /djinn:learn <quiz file> [<item id> ...] | /djinn:learn --topic "<topic>", each with optional --sources <path>[,<path>...].
++allowed-tools: Read, Grep, Glob, Agent, Bash, Write
++---
++
++# Djinn Learn
++
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++the key. They did not learn the map around it.
++
++This command takes one question and looks at it from four sides:
++
++1. **What should I have known?** Every option, the right one and each wrong
++   one, placed in its true home, and why it is wrong here.
++2. **What could have been asked?** The siblings: each wrong option turned
++   into the right answer of its own question, and the reverse question.
++3. **How does it get harder?** One new item per rung of a difficulty
++   ladder.
++4. **How do I prepare?** The misconceptions a bad student carries out of
++   the room, how each shows up as a wrong answer, the fix, and a short plan.
++
++Then a fact checker ties every claim to a line in the repo or says it could
++not, and synthesis turns what survives into draft exam items, training rows
++and a study sheet. It is a Learning Agent: it drafts material and plans, it
++runs when the owner asks, and nothing it writes is final until a person
++reads it.
++
++You are the orchestrator. Subagents cannot spawn subagents, so you run every
++wave yourself. Read `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` sections 7, 8, 9,
++11 and 13 first. Section 13 is the contract for this command: when this
++file and section 13 disagree, section 13 wins.
++
++**This is an LLM pass and it is not deterministic.** The same question run
++twice gives different items and different rows. The run records its input,
++the repo HEAD, the date and the model so a reader knows exactly what
++produced it, and it never claims to be reproducible.
++
++## Named constants
++
++- `SLUG_MAX`: 40 characters, the most a run folder's slug carries.
++- `PLAN_ABOVE`: 1. More questions than this, or any topic run, prints the
++  plan and waits for `go` before spawning anything.
++- `ANSWER_WEIGHT`: 0.5, the weight of the answer check in every GRPO
++  rubric (CONTRACTS.md section 13).
++- `FORBIDS_PENALTY`: 0.15, what a GRPO reply loses for using a named
++  misconception's words.
++
++Each is Donald's to change.
++
++## Step 1: Read the config
++
++Find the working repo's root with
++`git --no-optional-locks -c core.fsmonitor=false -c core.quotePath=false rev-parse --show-toplevel`.
++That repo is the **target repo**: the sources, the item shape and the run
++folder all live in it.
++
++Read `.djinn/config.yaml` there if it exists and take the `learn` block:
++`sources`, `exclude`, `item_shape`, `writing_rules`, `tiers`, `scenarios`,
++`secure_paths`, `out_dir` (absent means `learn/`). Take `conventions_files`
++too; learn agents read them as house rules. No other key matters here,
++`base_branch` is not required, and the file itself is optional.
++
++Learn is repo agnostic. Nothing in this command names a folder of any one
++project: every path it uses comes from the config, the arguments, or Step
++3b's discovery, which the owner confirms.
++
++Make this run's temp folder, `RUN_TMP=$(mktemp -d)`, note the path it
++printed, and remove it on every exit path (CONTRACTS.md section 9).
++
++## Step 2: Parse the arguments
++
++`$ARGUMENTS` is one of three input forms, plus optional flags.
++
++- **A question in the prompt.** Any text that is not an existing file path
++  and does not start with `--topic`. It may carry options (lines starting
++  `A.`, `B)`, `-` and the like) and a key (a line starting `Answer:` or
++  `Key:`). With no key line, ask the owner for the key once and stop until
++  they give it. Never pick the key yourself. The question id is `q1`.
++- **A quiz file**, optionally followed by item ids:
++  `/djinn:learn content/quizzes/week-3.yaml q7`.
++  A path that exists, relative to the target repo root or absolute. With
++  item ids, take those items; an id the file does not hold stops the run
++  and lists the ids it does hold. With no ids, take every item in the file.
++  The question id is the item's own `id`.
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++
++Flags:
++
++- `--sources <path>[,<path>...]`: replaces `learn.sources` for this run.
++  Each path must exist under the target repo; one that does not stops the
++  run and names it.
++
++Sources, item shape, writing rules, tiers and scenarios the config and the
++flags leave empty are proposed in Step 3b.
++
++## Step 3: Read each question
++
++Read the input with Read, never through a shell. For each question, record:
++
++- the id, the file and line it starts on (`path:line`), or `prompt`
++- its type as the file names it (for example `single`, `fill`, `justify`)
++- the stem, every option in its authored order, the key, and the
++  rationale if the file carries one, all verbatim
++- any figure path the item names, and whether that file exists
++- any other field the item carries, verbatim
++
++An item whose key is missing or points at no option stops the run for that
++item: say so and leave it out, and name it in the plan and the README.
++
++For a file input, write its path to `$RUN_TMP/input-path` with Write.
++Record the target repo's HEAD
++(`git --no-optional-locks -c core.fsmonitor=false rev-parse HEAD`) and
++whether the input file has uncommitted changes
++(`tr '\n' '\0' < "$RUN_TMP/input-path" | xargs -0 -r git --no-optional-locks -c core.fsmonitor=false -c core.quotePath=false status --porcelain --`;
++any output means dirty; an input outside the target repo reads `n/a`).
++
++## Step 3b: Discover what the config does not say, then the secure check
++
++For every `learn` key still empty (`sources`, `item_shape`,
++`writing_rules`, `tiers`, `scenarios`, `secure_paths`), propose a value
++from the target repo, by the rules in CONTRACTS.md section 13, "Discovery". Read the repo's
++`CLAUDE.md` and `README` first; they usually name where sourced material
++lives, where the quiz schema is, what the tiers mean and which settings
++scenarios rotate through. Use Glob and Read, never a shell. Every
++proposed value carries where it came from (`CLAUDE.md:42`, `folder name`,
++`the input file`). A tier or scenario list is quoted from the file that
++states it, never paraphrased into something the repo did not say.
++
++If no sources come from config, flags or discovery: append the ledger line
++with outcome `ABORTED step 3b: no sources`, tell the owner to add a
++`learn.sources` list (CONTRACTS.md section 13) or pass `--sources`, and
++stop. A fact checker with nothing to cite marks every claim UNVERIFIED, and
++a run of that is noise presented as data.
++
++**Secure check** (file inputs only). Resolve the input file's real path:
++`tr '\n' '\0' < "$RUN_TMP/input-path" | xargs -0 -r realpath -e --`. The
++input is a **secure source** when any folder in its path is named `secure`
++or it sits under a `learn.secure_paths` entry. A secure source whose real
++path is outside the target repo stops the run: append the ledger line with
++outcome `ABORTED step 3b: secure source outside this repo`, and tell the
++owner to run the command from inside the repo that holds the file. Its
++derived items and rows can carry its key, so they stay in the repo the item
++came from.
++
++## Step 4: Topic mode (only with --topic)
++
++Search every `learn.item_shape` file that is a question bank, and every
++question bank the sources hold, for items whose stem, options or key name
++the topic's words (Grep, case-insensitive, the topic written to a pattern
++file in `$RUN_TMP` and passed with `-f`, never typed). List up to the first
++ten matches as `id  path:line  first words of the stem` and ask the owner
++which to run, or `seed` for a new question.
++
++On `seed`, or when nothing matched: the run makes one seed question, after
++Step 6 has made the run folder and before Step 7. The plan shows it as
++`seed-1  (drafted after go)`. Spawn learn-known alone with `model: "opus"` and the angle block (Step 7),
++with `MODE: seed. TOPIC: <topic>` in place of the question. It writes
++`<RUN_DIR>/angles/seed-1/seed.md`: one question in the target repo's item
++shape, its key, and the claims it rests on. Read it back, record it in
++`input.md` as `seed-1, drafted by learn-known, not from any bank`, and run
++the rest of the pipeline on it as question `seed-1`. A seed question is
++model drafted and its README line says so.
++
++## Step 5: The plan
++
++Print, before any agent is spawned:
++
++```
++learn plan: <n> question(s) from <input>, secure=<yes|no>
++  <qid>  <type>  <first words of the stem>   key: <key>
++agents: <4 x n> angle, <n> fact checker, 1 synthesis = <total> Opus runs
++sources: <list>                              (config | --sources | discovered: <where>)
++item shape: <list, or neutral>               (config | discovered: <where>)
++writing rules: <list or none>                (config | discovered: <where>)
++tiers: <name: definition, ... or generic ladder>   (config | discovered: <path:line>)
++scenarios: <names or none>                   (config | discovered: <path:line>)
++secure paths: <list or none>                 (config | discovered: <path:line>)
++out: <out_dir>/<timestamp>-<slug>/
++```
++
++With more questions than `PLAN_ABOVE`, in topic mode, or when any line
++above says `discovered`, wait for the owner to say `go`. The owner may
++answer with a correction instead ("sources: research/ only"); apply it,
++print the plan again, and wait again. Anything else ends the run: append
++the ledger line with outcome `DECLINED at plan` and stop. Otherwise (one
++question, every value from config or flags), print the plan and go on.
++
++## Step 6: Create the run folder
++
++Timestamp: `date +%Y-%m-%d-%H%M`. Slug: the question id for one question,
++the file's base name for a whole file, the topic for a topic run; lower
++case, every character outside `a` to `z`, `0` to `9` and `-` turned into
++`-`, repeats collapsed, cut to `SLUG_MAX`. `RUN_DIR` is
++`<out_dir>/<timestamp>-<slug>/`. If it exists (Glob), append `-2`, `-3`
++and so on. Never overwrite. The Write tool makes the folders; no `mkdir`.
++
++Write, each with the attribution header (CONTRACTS.md section 7,
++`author: Claude <model> (learn command)`, `status: learn draft, not yet
++reviewed`):
++
++- `<RUN_DIR>/context.md`:
++
++  ```
++  input: <the arguments as given>
++  input_ref: <path:line per question, or prompt, or topic>
++  target_repo: <root>
++  head: <full sha>
++  input_dirty: <yes | no | n/a>
++  secure: <yes | no>
++  questions: <ids>
++  sources: <list, and whether from config or --sources>
++  exclude: <the input file, learn/, audits/, plus learn.exclude>
++  item_shape: <list, or neutral>
++  writing_rules: <list or none>
++  tiers: <the list, or generic ladder>
++  scenarios: <the list, or none>
++  provenance: <for sources, item_shape, writing_rules, tiers, scenarios and secure_paths: config, --sources, or discovered from where>
++  model: <the model id you are running on>
++  date: <iso>
++  deterministic: no. An LLM pass; a rerun gives different output.
++  ```
++
++- `<RUN_DIR>/input.md`: each question verbatim, as Step 3 recorded it,
++  under a heading `## <qid>` with its `path:line`.
++
++## Step 7: The angle wave
++
++For each question, spawn the four angle agents in parallel: one message
++with four Agent calls, `subagent_type` `learn-known`, `learn-asked`,
++`learn-harder` and `learn-prepare`, each with `model: "opus"`. Wait for all
++four before the next question's four. Each gets the angle block:
++
++```
++LEARN RUN: <RUN_DIR>
++QUESTION: <qid>
++Source: <path:line, or prompt, or topic seed>
++Secure source: <yes | no>
++
++The question, verbatim:
++<the Step 3 record: type, stem, every option in authored order, the key,
++the rationale if any, the figure path and whether it exists, any other
++field>
++
++Sources you may read and cite (learn.sources, in the owner's order of
++trust): <list>
++Never read as evidence: <the input file, learn/, audits/, learn.exclude>.
++You may read the input file to see the other items in it, never to support
++a claim.
++Item shape (learn.item_shape): <list, or neutral>. Read these before you
++write an item.
++Writing rules (learn.writing_rules): <list or none>. Read these before you
++write an item or an explanation.
++Tiers (learn.tiers): <each name and definition, with path:line, or
++"generic ladder">. learn-harder builds its ladder on these.
++Scenarios (learn.scenarios): <each setting and the file its details come
++from, or none>. Items rotate through these; details come only from the
++named file.
++House rules (conventions_files, and the target repo's CLAUDE.md): <list>.
++
++Start your file with the attribution header from CONTRACTS.md section 7,
++status "learn draft, not yet reviewed". Write exactly one file:
++<RUN_DIR>/angles/<qid>/<your-name>.md
++Reply with only the header line and your Counts line.
++```
++
++If an agent returned nothing or errored, retry it once. If it fails again,
++write its file yourself with the header and the single line
++`FAILED TO RETURN (2 attempts)`. If it replied but its file is missing,
++write its returned text to the path.
++
++## Step 8: The fact checker
++
++When every angle file exists, spawn learn-fact-checker once per question,
++all in one message, each with `model: "opus"`. Prompt:
++
++```
++LEARN RUN: <RUN_DIR>
++QUESTION: <qid>
++Angle files: <RUN_DIR>/angles/<qid>/learn-known.md, learn-asked.md,
++learn-harder.md, learn-prepare.md
++Sources you may cite: <list>
++Never evidence: <the input file, learn/, audits/, learn.exclude>
++Write exactly one file: <RUN_DIR>/verification/<qid>.md
++Reply with only the header line and your Counts line.
++```
++
++Retry and missing file rules as in Step 7. A question whose verification
++file reads `FAILED TO RETURN` has every claim UNVERIFIED, and synthesis is
++told so.
++
++## Step 9: Synthesis, then the check
++
++Spawn learn-synthesis once, alone, with `model: "opus"`. Prompt:
++
++```
++LEARN RUN: <RUN_DIR>
++Questions: <ids>
++Context: <RUN_DIR>/context.md   Input: <RUN_DIR>/input.md
++Angle files: <RUN_DIR>/angles/<qid>/*.md, per question
++Verification: <RUN_DIR>/verification/<qid>.md, per question
++Failed agents: <list or none>
++Secure source: <yes | no>
++Item shape: <list, or neutral>   Writing rules: <list or none>
++Tiers: <list, or generic ladder>   Scenarios: <list or none>
++Model: <model id>   Date: <YYYY-MM-DD>
++ANSWER_WEIGHT: 0.5   FORBIDS_PENALTY: 0.15
++Write the files CONTRACTS.md section 13 lists for the run folder, except
++context.md, input.md, check.txt and usage.md, which are mine.
++Reply with only the header line and the README's Counts line.
++```
++
++**The check.** Write this script to `$RUN_TMP/learn-check.py` with Write,
++exactly as it stands:
++
++```python
++import json
++import sys
++
++ROLES = {"system", "user", "assistant"}
++META = {"source_id", "source_ref", "item", "run", "angle", "rung",
++        "verification", "claims", "unverified_claims"}
++TOP = {
++    "sft": {"messages", "metadata"},
++    "dpo": {"prompt", "chosen", "rejected", "metadata"},
++    "grpo": {"prompt", "answer", "rubric", "metadata"},
++}
++LAST_LINE = "end your reply with one line: answer:"
++
++
++def messages(value, where, last_role):
++    if not isinstance(value, list) or not value:
++        return [where + ": not a non-empty list of messages"]
++    for i, m in enumerate(value):
++        if not isinstance(m, dict) or set(m) != {"role", "content"}:
++            return [where + "[" + str(i) + "]: keys are not exactly role, content"]
++        if m["role"] not in ROLES:
++            return [where + "[" + str(i) + "]: role is not system, user or assistant"]
++        if not isinstance(m["content"], str) or not m["content"].strip():
++            return [where + "[" + str(i) + "]: content is empty or not text"]
++    if value[-1]["role"] != last_role:
++        return [where + ": last message is not " + last_role]
++    return []
++
++
++def metadata(value, kind):
++    want = META | ({"pair"} if kind == "dpo" else set())
++    if not isinstance(value, dict) or set(value) != want:
++        return ["metadata: keys are not exactly " + ", ".join(sorted(want))]
++    errs = []
++    for key in want:
++        text = key not in ("claims", "unverified_claims")
++        ok = isinstance(value[key], str) if text else (
++            isinstance(value[key], list) and all(isinstance(c, str) for c in value[key]))
++        if not ok:
++            errs.append("metadata." + key + ": wrong type")
++    if value.get("verification") not in ("VERIFIED", "UNVERIFIED"):
++        errs.append("metadata.verification: not VERIFIED or UNVERIFIED")
++    elif (value["verification"] == "VERIFIED") != (value.get("unverified_claims") == []):
++        errs.append("metadata: verification disagrees with unverified_claims")
++    if kind == "dpo" and value.get("pair") not in ("shallow", "misconception"):
++        errs.append("metadata.pair: not shallow or misconception")
++    return errs
++
++
++def rubric(row):
++    checks = row.get("rubric")
++    if not isinstance(checks, list) or not checks:
++        return ["rubric: not a non-empty list"]
++    for c in checks:
++        if not isinstance(c, dict) or set(c) != {"id", "kind", "weight", "terms"}:
++            return ["rubric: a check's keys are not exactly id, kind, weight, terms"]
++        if c["kind"] not in ("answer", "mentions", "forbids"):
++            return ["rubric: kind is not answer, mentions or forbids"]
++        if not isinstance(c["weight"], (int, float)) or isinstance(c["weight"], bool):
++            return ["rubric: weight is not a number"]
++        if not isinstance(c["terms"], list) or not c["terms"] or not all(
++                isinstance(t, str) and t.strip() for t in c["terms"]):
++            return ["rubric: terms is not a non-empty list of text"]
++    errs = []
++    if checks[0]["kind"] != "answer" or sum(c["kind"] == "answer" for c in checks) != 1:
++        errs.append("rubric: not exactly one answer check, first")
++    elif checks[0]["terms"][0] != row.get("answer"):
++        errs.append("rubric: the answer check's first term is not the answer column")
++    if abs(sum(c["weight"] for c in checks if c["kind"] != "forbids") - 1.0) > 1e-6:
++        errs.append("rubric: answer and mentions weights do not add to 1.0")
++    if any(c["kind"] == "forbids" and c["weight"] <= 0 for c in checks):
++        errs.append("rubric: a forbids penalty is not above 0")
++    return errs
++
++
++def check_row(row, kind):
++    if not isinstance(row, dict) or set(row) != TOP[kind]:
++        return ["keys are not exactly " + ", ".join(sorted(TOP[kind]))]
++    errs = metadata(row["metadata"], kind)
++    if kind == "sft":
++        errs += messages(row["messages"], "messages", "assistant")
++        if isinstance(row["messages"], list) and not any(
++                isinstance(m, dict) and m.get("role") == "user" for m in row["messages"]):
++            errs.append("messages: no user message")
++    else:
++        errs += messages(row["prompt"], "prompt", "user")
++    if kind == "dpo":
++        for side in ("chosen", "rejected"):
++            errs += messages(row[side], side, "assistant")
++            if isinstance(row[side], list) and len(row[side]) != 1:
++                errs.append(side + ": not exactly one assistant message")
++        if row["chosen"] == row["rejected"]:
++            errs.append("chosen and rejected are the same")
++    if kind == "grpo":
++        if not isinstance(row["answer"], str) or not row["answer"].strip():
++            errs.append("answer: empty or not text")
++        errs += rubric(row)
++        if not errs:
++            lines = [l for l in row["prompt"][-1]["content"].splitlines() if l.strip()]
++            if not lines or not lines[-1].strip().lower().startswith(LAST_LINE):
++                errs.append("prompt: last line is not the Answer instruction")
++    return errs
++
++
++failed = False
++for path in [a for a in sys.argv[1:] if a != "--"]:
++    kind = path.rsplit("/", 1)[-1].split(".", 1)[0]
++    if kind not in TOP:
++        print(path + ": not sft, dpo or grpo, skipped")
++        continue
++    rows = 0
++    with open(path, encoding="utf-8") as f:
++        for n, line in enumerate(f, 1):
++            if not line.strip():
++                print(path + ":" + str(n) + ": blank line")
++                failed = True
++                continue
++            try:
++                row = json.loads(line)
++            except json.JSONDecodeError as e:
++                print(path + ":" + str(n) + ": not JSON: " + e.msg)
++                failed = True
++                continue
++            rows += 1
++            for err in check_row(row, kind):
++                print(path + ":" + str(n) + ": " + err)
++                failed = True
++    print(path + ": " + str(rows) + " rows read")
++sys.exit(1 if failed else 0)
++```
++
++Write the three `.jsonl` paths, one per line, to `$RUN_TMP/jsonl-files`
++with Write, then run
++`tr '\n' '\0' < "$RUN_TMP/jsonl-files" | xargs -0 -r python3 "$RUN_TMP/learn-check.py" --`.
++Write its whole output to `<RUN_DIR>/check.txt` with Write, with the
++attribution header. The check passed only when every output line reads
++`<file>: <n> rows read`; any other line is a failure, and so is a missing
++file, named. (xargs exits 123 when the script exits 1; read the lines, not
++the code.)
++
++On a failure, spawn learn-synthesis once more, alone: "`<RUN_DIR>/check.txt`
++lists lines that fail CONTRACTS.md section 13. Rewrite only the files it
++names so every line passes. Change nothing else." Then run the check again
++and write `check.txt` again. A second failure is not retried: the outcome
++is `PARTIAL: <file> failed its check`, and the report says which lines.
++
++## Step 10: Usage table and ledger (always, even on an early stop)
++
++**Usage.** Write `<RUN_DIR>/usage.md` with the attribution header and the
++table from CONTRACTS.md section 6, one row per agent run (an angle agent
++per question counts once per question, named `<agent> <qid>`), and a total.
++Write `?` where an agent returned no usage block. A run stopped before
++Step 6 has no folder and no usage file.
++
++**Ledger.** Append exactly one line to `<out_dir>/LEDGER.md`, creating it
++with the header row from CONTRACTS.md section 13 if it is missing:
++
++```
++| <YYYY-MM-DD HH:MM> | learn | <RUN_DIR or none> | input=<path#ids, prompt, or topic:<slug>> questions=<n> secure=<yes|no> | <outcome> | items=<n> sft=<n> dpo=<n> grpo=<n> claims=V<n> U<n> C<n> quarantined=<n> check=<pass|fail|not run> tokens=<total or ?> |
++```
++
++Counts come from the README's Counts line. A run stopped before synthesis
++writes its counts as `?`. Never write a key, a stem or an answer into the
++ledger: an input from a secure source must not leak through it, so the
++input column carries only the path and the ids.
++
++## Step 11: Report to the owner
++
++- `RUN_DIR`, and `SECURE SOURCE: keep this folder out of any public repo
++  and off any public dataset hub` first when the input is secure.
++- Per output: the count, and `check pass` or the failing lines.
++- Claims: VERIFIED, UNVERIFIED, CONTRADICTED, and what was quarantined.
++- The UNVERIFIED claims, as `<qid>.<id> <the claim>`, so the owner can rule
++  on each. Past ten, the count and `see README.md`.
++- Failed agents, if any.
++- Next step: "Read `<RUN_DIR>/README.md`, then `items-DRAFT.*`. Nothing
++  here is in the repo's content. Move an item there by hand once you have
++  read it and made its explanation your own."
++
++## Rules
++
++- Write nothing outside `RUN_DIR` and `<out_dir>/LEDGER.md`. Never write
++  into the repo's content, its question banks, or `audits/`.
++- Every Agent call passes `model: "opus"` explicitly.
++- Angle agents run in parallel per question. The fact checkers run in
++  parallel after every angle file exists. Synthesis runs alone, last.
++- Never pick an answer key yourself. A question without one waits for the
++  owner.
++- Bash is for `git rev-parse`, `git status --porcelain` (each with the
++  CONTRACTS.md section 9 read prefix), `date`, `mktemp -d`,
++  `rm -rf "$RUN_TMP"` for that folder only, `realpath -e` for the secure
++  check, `tr` and `xargs -0 -r`, and the one `python3` call on the script
++  above. Nothing else. No path or argument is typed into a command line:
++  paths go through a list file in `$RUN_TMP`.
++- Read input files and sources with Read, Grep and Glob, never through a
++  shell. Never open `.env`, key or credential files; the section 9 secret
++  shapes apply to every search.
++
++## Runtime notes
++
++Claude Code specific: `allowed-tools`, `$ARGUMENTS`,
++`${CLAUDE_PLUGIN_ROOT}`, the Agent tool with `subagent_type` and `model`,
++and parallel spawning by putting several Agent calls in one message. An
++adapter for another runtime maps each of these. The waves (four angle
++agents per question in parallel, then the fact checkers, then synthesis
++alone, then the check) are the contract, not the mechanism. The check needs
++a `python3` on the owner's machine; without one the outcome is
++`PARTIAL: check not run` and the report says so.
+diff --git a/plugins/djinn/relay.md b/plugins/djinn/relay.md
+index e1110a9..6e4fafb 100644
+--- a/plugins/djinn/relay.md
++++ b/plugins/djinn/relay.md
+@@ -223,6 +223,17 @@ weeks later.
+ The cost is ceremony. For a typo, it is overhead. For anything else, the
+ structure pays for itself.
+ 
++## Learn, a separate pipeline
++
++`/djinn:learn` borrows the relay's habits (Opus only, a timestamped folder,
++a ledger line on every exit path, the section 7 header on every file, the
++section 9 search rules) and nothing else. There is no fence, no severity
++ladder and no verdict, because nothing is being judged: one question is
++being looked at from four sides. The waves mirror a review round: four
++angle agents in parallel per question, a fact checker per question, one
++synthesis, then a mechanical check of the training files. CONTRACTS.md
++section 13 is its contract.
++
+ ## Commands
+ 
+ | Command                                     | Phase | Purpose |
+@@ -231,3 +242,4 @@ structure pays for itself.
+ | `/djinn:brief <audit-folder> <id>`          | 2 | Generate a fix brief from a synthesis finding, verify the citation, write the ledger line |
+ | `/djinn:dispatch [--prove] [--no-tests] <brief> [<brief>...]` | 3 | Execute briefs in batches, save diffs and reports, prove them if asked, run the next round, write the ledger line |
+ | `/djinn:status [<audit-folder>]`            | any | Print what is still open across every round, from the latest `findings.json`. Read only, no ledger line |
++| `/djinn:learn "<question>" \| <quiz file> [<id>...] \| --topic "<topic>" [--sources <paths>]` | none | Not a review. Four angle agents per question, a fact checker, synthesis: draft items, SFT, DPO and GRPO rows, a study sheet, a run folder under `learn/` and a line in `learn/LEDGER.md` |
+diff --git a/plugins/djinn/templates/config.yaml b/plugins/djinn/templates/config.yaml
+index 5a396f4..8cc486f 100644
+--- a/plugins/djinn/templates/config.yaml
++++ b/plugins/djinn/templates/config.yaml
+@@ -155,6 +155,29 @@ live:
+   #    dom_map: none         # dated capture map selectors come from
+   review_copy: none      # opt in: a folder inside your home, outside the live code, the live scope report is also copied to
+ 
++# For /djinn:learn, which turns an exam question into study material and
++# training data. Optional: without it, learn proposes each value from the
++# repo (its CLAUDE.md, README, schema docs, folder names) and waits for you
++# to say go. Every path is relative to the repo root. CONTRACTS.md section
++# 13 has the rules and two filled examples.
++learn:
++  sources: []            # what the fact checker may cite, e.g. [research/, docs/research/]
++  exclude: []            # never read as evidence (the input file, learn/ and audits/ always are)
++  item_shape: []         # schema docs, item tests and a real bank, e.g. [content/schema/quiz.md, tests/content.test.mjs]
++  writing_rules: []      # e.g. [docs/ITEM-WRITING.md]
++  tiers: []              # your difficulty tiers in order, each a name and what it tests
++  # e.g.
++  #  - name: easy
++  #    tests: the mechanism, what happens and why
++  #  - name: hard
++  #    tests: spot the mistake in a spec, or make the call
++  scenarios: []          # settings items rotate through, each with the file its details come from
++  # e.g.
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++[redacted 2026-09-29: this line used a private course item, its key or a private repo path as an example]
++  secure_paths: []       # inputs from here never leave this repo; [.] for a private repo
++  out_dir: learn/
++
+ # Free text every agent reads as architecture context. State model, event
+ # mechanism, render or request loop, anything a new reviewer needs. Link to
+ # a doc for detail.

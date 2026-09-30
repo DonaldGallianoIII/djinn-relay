@@ -1,0 +1,67 @@
+== breaker
+HIGH-1. `plugins/djinn/agents/cost-complexity-reviewer.md:200` The prompt's own model HIGH, a paid call that retries with no cap, cannot be filed whenever the price is uncited, so a real blocking defe
+MEDIUM-1. `plugins/djinn/agents/cost-complexity-reviewer.md:182` The prompt's MEDIUM bar (a budget breach) and its HIGH bar (an unbounded bill) do not meet the CONTRACTS.md section 1 bars synthesis no
+MEDIUM-2. `plugins/djinn/agents/cost-complexity-reviewer.md:177` "No bound" does not separate growth over time from growth with input size, so any uncapped input becomes a HIGH that blocks the merge, 
+MEDIUM-3. `plugins/djinn/agents/cost-complexity-reviewer.md:82` Under the standing IaC and CI exception, every diff inherits a pre-existing CI or hosting cost, and the prompt sends it to two places at
+MEDIUM-4. `plugins/djinn/agents/cost-complexity-reviewer.md:106` When `cost.load` and a cap in the code disagree, the prompt has no rule for which figure wins, so a MEDIUM can be filed for a load the 
+LOW-1. `plugins/djinn/agents/cost-complexity-reviewer.md:96` An "official page you fetched" does not have to match the region, tier, or currency in `cost.hosting`. A cited price can be the wrong price
+LOW-2. `plugins/djinn/agents/cost-complexity-reviewer.md:97` A stale price in config goes unnoticed. Lines 59 to 60 let `cost.paid_apis` carry "price if known", but line 97 does not list that key as a
+LOW-3. `plugins/djinn/agents/cost-complexity-reviewer.md:44` "Never guess a value and never go looking for one" contradicts line 98, which allows fetching a limit when `cost.limits` is absent. A liter
+LOW-4. `plugins/djinn/agents/cost-complexity-reviewer.md:274` A fenced file whose only claims went to UNVERIFIED appears in neither Findings nor Checked and Clean, so synthesis marks it "not covered".
+LOW-5. `plugins/djinn/agents/cost-complexity-reviewer.md:75` A 200 file fence, plus line 82's unconditional "Read them" over every IaC and CI file, gives no reading order. In an Azure monorepo with hu
+REC-1. Write a dispatch fuzz fixture for this agent: six config variants (no cost block, hosting only, load contradicting a cap, web off, a login-walled vendor, a CSS-only fence), each with its expect
+== gap-hunter
+REC-1 (high). `plugins/djinn/agents/cost-complexity-reviewer.md:138` LLM token meter, as its own scope item.
+REC-2 (high). `plugins/djinn/agents/cost-complexity-reviewer.md:111` A way to feed real bills and metrics back in.
+REC-3 (high). `plugins/djinn/agents/cost-complexity-reviewer.md:200` A path for a finding that needs no price, and for limits no web page publishes.
+REC-4 (medium). `plugins/djinn/agents/cost-complexity-reviewer.md:234` One row per meter, findings point at it.
+REC-5 (medium). `plugins/djinn/agents/cost-complexity-reviewer.md:27` Say which "complexity" the name means.
+REC-6 (medium). `plugins/djinn/agents/cost-complexity-reviewer.md:156` Azure resource shape and environments left running.
+REC-7 (medium). `plugins/djinn/agents/cost-complexity-reviewer.md:166` Bytes shipped to a browser as a meter.
+REC-8 (medium). `plugins/djinn/agents/cost-complexity-reviewer.md:141` A spend gate on every paid tool.
+REC-9 (low). Storage that only grows: add artifact retention (traces, audit folders, blob containers with no lifecycle tier or delete rule) to item 5, with cool and archive tiers and their early-delet
+REC-10 (low). GPU: one line saying GPU time on a player's machine is perf-reviewer's, GPU billed per second (a cloud render or a generative provider) is this agent's.
+REC-11 (low). Save every fetched price and limit into the audit folder as `prices.md` with URL and date, so round 2 reuses it and the owner can paste rows into `cost.pricing_refs`.
+REC-12 (low). The wiring into CONTRACTS.md section 5 needs `cost.hosting`, `load`, `budget`, `limits`, `paid_apis`, `pricing_refs`, plus `actuals` and `environments` if REC-2 and REC-6 land, and templ
+REC-13 (low). Cold start is named once (line 160); teardown is named only as "a dev server nobody stops". A one line checklist of the three phases (provision, run, tear down) in item 5 would stop the 
+== integration-reviewer
+LOW-1. `plugins/djinn/agents/cost-complexity-reviewer.md:4` The agent carries `WebFetch, WebSearch`, and CONTRACTS.md section 9 grants web tools only to dependency-reviewer and ux-reviewer.
+LOW-2. `plugins/djinn/agents/cost-complexity-reviewer.md:267` The `## UNVERIFIED` section sits between Findings and Blast radius, and CONTRACTS.md section 3 allows an agent's own sections only before 
+LOW-3. `plugins/djinn/agents/cost-complexity-reviewer.md:214` "The two sections before Findings" is wrong: the template has three (Inputs missing, Cost model, Conventions proposed), four once LOW-2 is
+LOW-4. `plugins/djinn/agents/cost-complexity-reviewer.md:177` The HIGH and MEDIUM bars add categories CONTRACTS.md section 1 does not have, so synthesis will re-tier this agent's findings unpredictabl
+LOW-5. `plugins/djinn/agents/cost-complexity-reviewer.md:205` The Round 2 instruction tells the agent to re-verify prior findings, and the round dispatch tells every reviewer not to.
+LOW-6. `plugins/djinn/agents/cost-complexity-reviewer.md:228` The Cost model, Conventions proposed and UNVERIFIED sections reach no consumer after the agent report.
+LOW-7. `plugins/djinn/agents/cost-complexity-reviewer.md:63` The input list names `deps.platform` and `goal_doc`, which the dispatch this agent would receive never pastes.
+LOW-8. `plugins/djinn/agents/cost-complexity-reviewer.md:29` The division of labor with perf-reviewer understates perf-reviewer's own scope, so both agents claim OOM, timeouts and `@complexity` tags.
+DEBT-1. `plugins/djinn/agents/cost-complexity-reviewer.md:27` Ownership between agents lives only inside each agent's prompt, one direction at a time, so every new agent means editing four or five oth
+REC-1. CONTRACTS.md section 5 (after the `deps` block, CONTRACTS.md:140-147), add:
+REC-2. CONTRACTS.md:228-229 becomes: "Agents that check the outside world (dependency-reviewer, ux-reviewer, cost-complexity-reviewer): add `WebFetch, WebSearch`. Every claim from the web carries its 
+REC-3. CONTRACTS.md section 1, one rule after line 30: "cost-complexity-reviewer maps cost onto this ladder: a paid call or memory growth with no bound is HIGH; a breach of a documented limit, a timeo
+REC-4. `commands/review.md` wiring:
+REC-5. `commands/dispatch.md:205-206` becomes "Each prompt is the fence block from `/djinn:review` with the round fence, plus any per-agent block `/djinn:review` Step 6 and Step 7 add for that agent (
+REC-6. `templates/config.yaml`, after the `deps` block (line 42):
+REC-7. `README.md:114`, add `/djinn:review cost       paid APIs, hosting, rate limits, heap and timeouts`. `relay.md`: scopes table (after line 134) add `| `cost` | known-bugchecker, cost-complexity, 
+REC-8. `agents/synthesis.md:14-16` add: "cost-complexity-reviewer's Conventions proposed lines appear in the Fix List as REC. Its UNVERIFIED and Inputs missing lines go under Coverage as one line each
+REC-9. `agents/perf-reviewer.md:14-19` add "- cost-complexity-reviewer owns the bill and platform ceilings (plan memory, timeouts, rate limits). If a growth bug ends in a platform kill or a bill, repo
+== known-bugchecker
+== security-reviewer
+MEDIUM-1. `plugins/djinn/agents/cost-complexity-reviewer.md:4` The agent holds WebFetch, WebSearch and Write, reads untrusted pages and repo files, and is never told that what it reads is data, not in
+MEDIUM-2. `plugins/djinn/agents/cost-complexity-reviewer.md:97` Nothing stops the agent from putting project facts (keys, connection strings, internal hostnames, resource or endpoint names) into a Web
+MEDIUM-3. `plugins/djinn/agents/cost-complexity-reviewer.md:85` The agent may open `.env` and key files as "a config the changed code reads", and is never told not to, nor what to do with a key it see
+LOW-1. `plugins/djinn/agents/cost-complexity-reviewer.md:216` "The two sections before Findings" is wrong: the template has three (Inputs missing, Cost model, Conventions proposed), plus UNVERIFIED af
+LOW-2. `plugins/djinn/agents/cost-complexity-reviewer.md:37` "a key that makes unmetered calls is yours" reads as "free calls" to a new reader; the intended meaning is uncapped spend.
+REC-1. Wiring (known to be pending per context.md): CONTRACTS.md section 9 names only dependency-reviewer and ux-reviewer as agents with `WebFetch, WebSearch`. When the agent is wired, section 9 must 
+REC-2. Wiring: the new `cost` block in CONTRACTS.md section 5 and `templates/config.yaml` should say `cost.paid_apis` holds the key's location (env var name or vault reference), never its value, with 
+== ux-reviewer
+LOW-1. `plugins/djinn/agents/cost-complexity-reviewer.md:214` The prompt says "The two sections before Findings", but the template has three (Inputs missing, Cost model, Conventions proposed) and a fo
+LOW-2. `plugins/djinn/agents/cost-complexity-reviewer.md:70` The rule for uncited figures appears three times, worded differently, and the three versions disagree on whether a LOW may rest on a load f
+LOW-3. `plugins/djinn/agents/cost-complexity-reviewer.md:231` The template's example row fills price and estimate with `...`, and line 101 says an uncited figure is written as a variable.
+LOW-4. `plugins/djinn/agents/cost-complexity-reviewer.md:105` Three notices are told to go "at the top" or "in one line" with no slot in the template.
+LOW-5. `plugins/djinn/agents/cost-complexity-reviewer.md:44` "Never guess a value and never go looking for one" collides with line 97 to 100, which tells the agent to fetch official pricing and limits
+REC-1. `plugins/djinn/agents/cost-complexity-reviewer.md:47` Donald writes the `cost` block by hand. Only `cost.hosting` has an example, and nothing says whether a key takes a string, a list or a map.
+REC-2. `plugins/djinn/agents/cost-complexity-reviewer.md:229` The Cost model table is seven columns, and its last column holds a full URL plus a date, so it breaks in a terminal.
+REC-3. `plugins/djinn/agents/cost-complexity-reviewer.md:234` The Ceilings table's `headroom` column has no convention for a breach.
+REC-4. `plugins/djinn/agents/cost-complexity-reviewer.md:176` At 295 lines, the prompt is about 100 lines longer than `perf-reviewer.md`, which ends near line 195. About 30 of those lines can go witho
+REC-5. `plugins/djinn/agents/cost-complexity-reviewer.md:66` With no `cost` block at all, which is the case for djinn-relay (`.djinn/config.yaml` has none) and the game repo today, the rule produces six n
+REC-6. `plugins/djinn/agents/cost-complexity-reviewer.md:4` For integration-reviewer: the `tools:` line grants WebFetch and WebSearch, but CONTRACTS.md section 9 lists only dependency-reviewer and ux-
+REC-7. `plugins/djinn/agents/cost-complexity-reviewer.md:267` For integration-reviewer: CONTRACTS.md section 3 allows an agent's own sections before Findings only, and `## UNVERIFIED` sits after Findi

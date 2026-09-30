@@ -12,7 +12,7 @@ Read alongside: `relay.md`, `commands/review.md`, `commands/dispatch.md`,
 
 The prompt is short and the Role section is the best line in it. The problems
 are structural: it reads beyond the fence with no way to report that, its
-Scope list is the GameEngine known-bug index restated, and its output cannot
+Scope list is the engine repo known-bug index restated, and its output cannot
 be tied back to a finding in Round 2.
 
 **1. The read-beyond-changed-files instruction has no fence hook** (line 10)
@@ -20,7 +20,7 @@ Current: "Read every changed file in full, plus any files they directly interact
 Proposed: "The dispatch pastes the changed-file list. That list is the fence. Read every file on it in full. You may open a file off the list only to confirm a caller or an import you need for a trace, and every such file goes in the `Files read outside the fence` section of your report with the reason. No entry there means you read nothing else."
 Why: Decision 1 says synthesis reports any file a reviewer read outside the fence, and this prompt gives the agent nothing to report with. REVIEW.md permits reading "the files it touches," so the read stays allowed; it just has to be declared. Without the declaration, synthesis cannot tell a covered file from a wandered-into one.
 
-**2. Scope is the GameEngine bug index restated, and it collides with three other agents** (lines 18 to 26)
+**2. Scope is the engine repo bug index restated, and it collides with three other agents** (lines 18 to 26)
 Current: seven bullets, including "Per-frame allocations", "guard flags not reset in finally blocks", "user input during restore", "event listeners not removed", "Any pattern listed in `bugs_to_avoid.md`".
 Proposed: replace with:
 "# Scope

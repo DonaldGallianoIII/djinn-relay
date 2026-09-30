@@ -45,7 +45,7 @@ Why: The skeptical clause on line 12 says trace the real path, but the output te
 **6. Move engine-specific vectors and the description's system list into per-project config** (lines 3, 25 to 30)
 Current: "two pointer events fire in the same frame", "typed arrays with mismatched lengths", "off-by-one on grid edges", "Toggle mode during save? Undo during restore?", "dispose() is called during an await", "HMR".
 Proposed: Keep the six vector names with one generic example each (empty collection, null where a value is expected, interrupted async, repeated call during an in-progress operation, unbounded growth, first and last element). Add: "The project config may list additional vectors and named critical systems. Read them after these." Drop "HMR" from line 3.
-Why: Decision 2. Pointer events, grid edges, undo/restore, HMR, and dispose() are GameEngine and Vite vocabulary. A Python service or a Discord bot has none of them and the model will either skip the vector or hallucinate one.
+Why: Decision 2. Pointer events, grid edges, undo/restore, HMR, and dispose() are the engine repo and Vite vocabulary. A Python service or a Discord bot has none of them and the model will either skip the vector or hallucinate one.
 
 **7. The description says when to invoke; the scope table disagrees** (line 3)
 Current: "Invoke on critical systems... save/load, auth, state management, IO, HMR."

@@ -1,0 +1,11 @@
+.djinn/config.yaml
+plugins/djinn/CONTRACTS.md
+plugins/djinn/README.md
+plugins/djinn/agents/bugs-reviewer.md
+plugins/djinn/agents/consolidator.md
+plugins/djinn/agents/integration-reviewer.md
+plugins/djinn/agents/known-bugchecker.md
+plugins/djinn/agents/security-reviewer.md
+plugins/djinn/agents/synthesis.md
+plugins/djinn/commands/dispatch.md
+plugins/djinn/commands/status.md

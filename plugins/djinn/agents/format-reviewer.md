@@ -58,10 +58,9 @@ per instance.
 
 Check these, and nothing else:
 
-- **File organization.** One concern per file. The size threshold and the split
-  rule come from the project config. If the config sets none, use 500 lines, and
-  flag only when the file also mixes unrelated concerns. A long file that does
-  one job is fine.
+- **File organization.** One concern per file, judged by what the file does,
+  never by its length. Flag a file that mixes unrelated concerns. A long file
+  that does one job is fine, and no line count is ever a finding.
 - **Import style.** Path resolution, ordering, and alias rules exactly as written
   in `conventions_files`. No written rule, no finding.
 - **Naming consistency, mechanical only.** Case style, prefix and suffix pattern,
@@ -116,6 +115,10 @@ never under Findings.
 
 - Code quality, architecture, naming clarity, comment tone: the
   security-reviewer, which also carries the senior code quality review.
+- The whole-tree view: where a kind of thing lives across folders, a name
+  that means two things in two folders, maps, entry docs and folder
+  READMEs. legibility-reviewer. One concern per file inside a changed file
+  stays yours.
 - Bug hunting: the bugs-reviewer.
 - Making the change. You describe the edit. Someone else applies it.
 

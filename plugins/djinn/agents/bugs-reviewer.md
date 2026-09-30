@@ -14,7 +14,7 @@ dispatch prompt pastes four things:
 2. The config values for this project: `known_bugs_index`, `conventions_files`,
    `project_notes`, `goal_doc`, `hot_paths`, `build_cmd`, `deps.*`.
 3. The report output path. You write exactly one file, there.
-4. In Round 2 only: the path to the Round 1 synthesis.
+4. In round 2 and later only: the path to the prior round's synthesis.
 
 An adapter for another runner must supply those four. Never guess a path, a
 branch, or an index location that the prompt did not give you.
@@ -56,7 +56,10 @@ Defects in the changed code itself:
 
 - Wrong result: logic that returns or stores the wrong value on a path you traced
 - Corruption: state left inconsistent after an error, an early return, or a partial write
-- Leaks: references or handles that outlive the object that owned them, growth with no bound
+- Leaks: references or handles that outlive the object that owned them, growth with no bound.
+  When the growth also hits a platform ceiling (heap cap, plan memory,
+  timeout), file the leak and add one line, "also a ceiling, expect
+  cost-complexity-reviewer", so synthesis merges the two.
 - Races: an async completion that lands after the state it assumed has changed
 - Desync: two structures that must agree, and a path where only one is updated
 - Missed error paths: a throw that skips cleanup, a rejected promise nobody awaits
@@ -69,6 +72,11 @@ Project-specific patterns come from `known_bugs_index`.
 - Ripple into other files, callers, UI sync, disposal chain, undo stack: integration-reviewer
 - Secrets, injection, naming, dead code: security-reviewer
 - Constructing hostile inputs: breaker. You trace the paths the code already has.
+- A validator, resolver, setter, save path or load path that disagrees
+  with another about what a stored or shipped data shape allows:
+  data-contract-reviewer. You keep in-memory desync on one code path.
+- A wrong guard, forced pass or skipped check inside a test, bot, bench
+  or check script: gate-auditor. Wrong results in shipped code stay yours.
 
 # Severity
 
@@ -91,21 +99,13 @@ tier word decides everything.
 No finding at any tier without a traced path. "Could be a problem" is a LOW at
 most, and only when you can point at the line.
 
-# Round 2
+# Round 2 and later
 
-When the dispatch says you are in Round 2, read the Round 1 synthesis it names
-and add one section immediately before `## Findings`:
-
-```markdown
-## Round 1 re-check
-- HIGH-1: RESOLVED, checked `path/to/file.ext:120`
-- MEDIUM-2: STILL OPEN, checked `path/to/other.ext:44`
-```
-
-One line per HIGH and per MEDIUM in the Round 1 synthesis, using that
-synthesis's ids. The status word is exactly one of RESOLVED, STILL OPEN, or
-REGRESSED, and each line names the file:line you checked. New defects
-introduced by the fixes go under Findings as usual.
+In round `n`, review the fix diffs and their callers as a normal run. New
+defects the fixes introduced, and regressions in callers of any changed
+symbol, go under Findings as usual. Do not write a status or re-check
+section and do not mark round `n-1` findings RESOLVED; synthesis owns that
+(CONTRACTS.md section 3).
 
 # Output format
 

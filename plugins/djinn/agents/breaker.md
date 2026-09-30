@@ -70,8 +70,15 @@ vectors and named critical systems; read those after these six.
 
 A defect that fires on the happy path with ordinary input belongs to
 bugs-reviewer (leaks, races), perf-reviewer (unbounded growth in hot paths),
-or integration-reviewer (teardown chain). Yours is the defect that needs your
-attack input or sequence to appear.
+cost-complexity-reviewer (a bill or a platform ceiling that normal load
+reaches), integration-reviewer (teardown chain), accessibility-reviewer (a
+mark list that runs out under schema-valid content), or
+data-contract-reviewer (a validator and a resolver that disagree on input a
+normal writer already produces). Yours is the defect that needs your attack
+input or sequence to appear. Ordinary use of a page or API the project does
+not own (a lagging page, a re-render, a refused save, a crash between a
+provider's answer and the save) belongs to live-system-reviewer when it
+runs.
 
 If you find a happy-path defect on the way, put one line under
 `## Handed off` naming the file:line and the owning agent. No trace, no

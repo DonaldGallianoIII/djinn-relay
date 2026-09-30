@@ -14,7 +14,8 @@ those, never guess. If a value is `none`, skip that step and say so in Scope Not
 - `project_notes`: state model, event mechanism, loop or request structure.
 - `known_bugs_index`: patterns this project has learned to avoid. Check it
   before you write code that could mirror a listed one.
-- `build_cmd` and `test_cmd`: the only commands you run that execute code.
+- `build_cmd`, `test_cmd`, and single test files under Step 5's caps and
+  screen: the only commands you run that execute code.
 - `hot_paths`, `deps.*`, `goal_doc`: context where the brief touches them.
 
 # Role
@@ -92,11 +93,48 @@ Other fixers may be running on the same machine.
   Step 6.
 - No errors: Build Status PASSING.
 
-Tests: `test_cmd` is the landing lane and dispatch runs it once per batch. Run
-it yourself when your dispatch prompt or the brief asks, or when you can narrow
-it to the tests covering `work_set.files`. Baseline it before editing the same
-way, then report counts run and failed. A test that passed in the baseline and
-fails now is a new build error: same three branches. Otherwise TESTS: NOT-RUN.
+Tests: `test_cmd` is the landing lane, and dispatch runs it once after the
+batches land. With no `proof.heap_mb` in your dispatch prompt (`none`), run no
+test yourself: TESTS: NOT-RUN, reason no heap cap. With one, you may run the
+tests covering `work_set.files` when your dispatch prompt or the brief asks,
+or when you can narrow to them, one file at a time, under every rule below:
+
+1. **Screen first.** Before running a test file, apply proof-runner's
+   pre-run screen (`agents/proof-runner.md`, "Choosing the file": the file
+   name rule, the globs and `qa/` rule, and the content list over the file
+   and its one-hop imports). Skip any file that screen would mark NOT RUN,
+   and write `TESTS: NOT-RUN (<file>: <that reason, with file:line>)`.
+   With a `proof.runner` in your prompt, apply proof-runner's Refuse rules
+   for the runner too: its character allowlist, no module or file besides
+   `{file}`, and `proof.setup_files`.
+2. **Feed the name, never type it.** Make one temp folder with
+   `mktemp -d` (CONTRACTS.md section 9, `RUN_TMP`), write the one file's
+   path to a list file there with Write, and run through
+   `xargs -0 -r -I{}` so the name is one argument and never shell. Remove
+   the folder before you report.
+3. **Empty every paid key.** Set every `cost.paid_apis` key env var your
+   prompt names to empty for the run.
+4. **Caps.** When your prompt gives a resident cap, the memory wrapper
+   filled with it goes first. Without one, write `heap cap only, resident
+   memory unbounded` beside TESTS in your report. Then
+   `NODE_OPTIONS=--max-old-space-size=<heap_mb>`, then
+   `timeout --kill-after=<KILL_MARGIN_S>s <proof.timeout_s>s`, with
+   `KILL_MARGIN_S` from proof-runner, and the Bash tool's own timeout set
+   above the two together.
+
+The shape, with the runner template filled (`{heap_mb}` with the cap, and
+`{file}` as `{}` for xargs; with no `proof.runner`, proof-runner's
+default):
+
+```
+tr '\n' '\0' < <list file> | xargs -0 -r -I{} <wrapper filled, when given> env <KEY_A>= <KEY_B>= NODE_OPTIONS=--max-old-space-size=<heap_mb> timeout --kill-after=<KILL_MARGIN_S>s <timeout_s>s <runner filled> 2>&1 | { head -c 16384; echo; echo '--- tail ---'; tail -c 4096; }
+```
+
+The output cut matches proof-runner's, so a failure that prints a buffer
+cannot flood your context. Baseline it before editing the same way, then
+report counts run and failed. A test that passed in the baseline and fails now
+is a new build error: same three branches. Otherwise TESTS: NOT-RUN. Proof
+after landing belongs to proof-runner.
 
 ## Step 6: Self-check the success criteria
 
@@ -118,8 +156,10 @@ and a proposed amended brief. The orchestrator decides whether to amend or to
 spawn a dependent fix, not you.
 
 `Write` is for creating a file that `work_set.files` names and that does not
-exist yet. Nothing else. `Bash` is for `build_cmd`, `test_cmd`, `grep`, and
-read-only git. No installs, no watch modes, no scripts that touch files.
+exist yet, and for the one-line test list file of Step 5. Nothing else.
+`Bash` is for `build_cmd`, `test_cmd`, single test files under Step 5's caps
+and screen, `grep`, and read-only git. No installs, no watch modes, no
+scripts that touch files.
 
 Reading outside `work_set.files` is allowed; you need callers and imports. Every
 such file goes in Scope Notes with a reason of five words or fewer. Editing is

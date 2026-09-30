@@ -1,0 +1,120 @@
+# Djinn Relay config for djinn-relay itself, so the plugin can review its own
+# changes. The plugin is markdown prompts, not code: reviewers read the
+# commands, agents and CONTRACTS.md for contradictions, broken references,
+# and instructions an agent would misread.
+
+# This repo has no main yet, and this is the branch the work happens on, so a
+# plain /djinn:review would compare the branch with itself and see only
+# uncommitted work. Always pass --base <commit before the change>.
+base_branch: Claude-Development-djinn-relay
+
+# The voice checker over the plugin's prompts (CONTRACTS.md section 11).
+# check_voice.py takes file paths, not a folder, so git ls-files feeds it every
+# tracked or unignored markdown, yaml and json file under plugins/, from the
+# repo root. git writes the list with -z and core.quotePath=false straight
+# into xargs -0, so a path with a space, a quote or a non-ASCII byte stays
+# one real argument and is never C-quoted. With no files it fails loudly
+# instead of running the checker with no arguments, and pipefail makes a
+# failed git fail the command. Then tools/check-private.sh fails on a
+# learn/ or local/ path, a learn mark (the SECURE SOURCE banner, a training
+# row's source_ref key, the learn draft status) outside the prompt files
+# that define it and outside audits/, a home directory path anywhere, any
+# word on the gitignored local/private-patterns.txt anywhere, audits/ and
+# plugins/ included, or a missing pattern list. It reads every git exit
+# status, so a git error fails it. Last, qa/bot/private-guards.sh drives
+# that check and the pre-push hook in scratch repos, so a guard that stops
+# guarding fails the build. The value is one single quoted YAML scalar with
+# no single quote inside it, so a YAML parser reads it; the paths use ~,
+# which the shell and every agent expand.
+build_cmd: 'set -o pipefail; cd "$(git rev-parse --show-toplevel)" && { test -n "$(git -c core.quotePath=false ls-files --cached --others --exclude-standard -- "plugins/*.md" "plugins/*.yaml" "plugins/*.json" | head -c 1)" || { echo "voice check: no files found under plugins/" >&2; exit 1; }; } && git -c core.quotePath=false ls-files -z --cached --others --exclude-standard -- "plugins/*.md" "plugins/*.yaml" "plugins/*.json" | xargs -0 -r python3 ~/Conventions/tools/check_voice.py && bash tools/check-private.sh && bash qa/bot/private-guards.sh'
+test_cmd: none
+
+known_bugs_index: ~/Conventions/code/KNOWN-BUGS.md
+
+conventions_files:
+  - plugins/djinn/CONTRACTS.md
+  - ~/Conventions/CLAUDE.md
+  - ~/Conventions/code/LEGIBILITY.md
+
+hot_paths: []
+
+goal_doc: none
+
+deps:
+  manifests: []
+  lockfiles: []
+  list_cmd: none
+  check_cmd: none
+  platform: none
+  coupled_sets: []
+  landmines: []
+
+project_notes: |
+  djinn-relay is a Claude Code marketplace plugin made only of markdown:
+  commands/*.md are orchestration prompts the main session follows,
+  agents/*.md are subagent definitions, CONTRACTS.md is the interface every
+  prompt must honor ("when a prompt and CONTRACTS.md disagree, CONTRACTS.md
+  wins"). There is no code and no build. A defect here is a prompt that
+  contradicts the contract or another prompt, a reference to a section,
+  file or field that does not exist, or an instruction an agent will
+  predictably misread. Version 2.2.0 adds findings.json (CONTRACTS.md
+  section 12), written by the synthesis agent every round, and a read-only
+  /djinn:status command. Version 2.3.0 wires seven agents
+  (cost-complexity-reviewer, accessibility-reviewer, gate-auditor,
+  proof-runner, live-system-reviewer, data-contract-reviewer,
+  legibility-reviewer), the cost, live and map scopes, tree-facts.md, and
+  tree.txt and tree-changes.txt for legibility-reviewer. Version 2.4.0
+  adds /djinn:learn and six learn- agents (learn-known, learn-asked,
+  learn-harder, learn-prepare, learn-fact-checker, learn-synthesis), with
+  CONTRACTS.md section 13 as their contract: a separate pipeline with no
+  fence and no tiers, repo agnostic through a learn config block or
+  discovery, writing TRL shaped JSONL that the command checks with one
+  python3 call. Donald's installed copy is a separate
+  cached 2.1.0; nothing here is published until he publishes it.
+  2.4.0 fix-up (2026-09-29, audits/2026-09-29-1303-custom/fixes/fix-report.md),
+  on Donald's rulings: R1, private course content never enters this public
+  repo: the two dry run example folders (commit 32a1c17) were dropped from
+  history before any push and live only in the gitignored local/ folder,
+  every prompt example now uses a public textbook fact (water boiling cooler
+  at altitude) in no private bank, and tools/check-private.sh in build_cmd
+  fails on a tracked run folder. R2, learn never writes an item that tests
+  bare vocabulary in any repo: the generic ladder is five rungs
+  (discrimination, application, multi-step, spot-the-mistake, edge-case),
+  the recall facts live in the study sheet's map, and a repo's tiers set
+  the tiers but no tier holds a naming item. R3, the scrubbed audit folder
+  and its ledger line are committed. R4, every other ruling takes the
+  synthesis's recommended option: an input file from another repo is
+  refused, secure or not; out_dir must sit inside the repo and is git
+  ignored by the first run; review and dispatch skip learn/ as they skip
+  audits/; topic picks and seed questions get the secure check and the
+  fact check; every row carries secure, group, split, shuffle_seed and
+  key_position; the command's script shuffles options by a recorded seed
+  and checks key position, key length and stem echo; rationales follow the
+  repo's register; a key is never cut, and any rewording goes back to the
+  fact checker.
+  Round 2 fix-up (2026-09-29, audits/2026-09-29-1428-custom/fixes/fix-report.md),
+  on Donald's "go ahead with your recs": every tracked file was scrubbed
+  of private course, work and home identifiers, and tools/check-private.sh
+  now greps every tracked or unignored file, audits/ and plugins/
+  included, for the gitignored local/private-patterns.txt and any
+  /home/<user>/ path, and every file outside audits/ for the learn marks
+  outside the files that define them; it reads every git exit status. R3 stands (scrubbed audit folders
+  are committed), with that pattern pass as the gate a scrub must clear.
+  Learn: a restatement is judged by the key reason and a named new fact,
+  never by homes; every item gets the double key question and a double
+  keyed item never ships VERIFIED; leaks run both ways; the release sheet
+  is an allow list of practice items that pass a release test; a seed
+  that reads a secure path makes the run secure; review and dispatch skip
+  learn/ only when it holds learn runs, and refuse learn agents by name.
+  Round 3 fix-up (2026-09-29, audits/2026-09-29-1654-custom/fixes/fix-report.md),
+  on Donald's "go with all rec and fix", with no further review rounds:
+  the private check fails without its pattern list and the pre-push hook
+  checks every added line and message of the pushed range and the pushed
+  tree; learn gains a seventh agent, learn-blind-reader, which reads every
+  item with no key for a test-wise cue and a secure run's release sheet
+  for a leak; a learn.banks list makes the dedupe and leak checks read
+  sibling banks, and any agent that opens a secure file makes the run
+  secure; a secure run's release sheet is fresh practice on the concepts
+  around the source; misplaced DPO pairs come only from learn-prepare's
+  Misplaces lines, and the script checks them and cue words on keys;
+  out_dir's tracked files check runs in Step 1, before any stop can write.

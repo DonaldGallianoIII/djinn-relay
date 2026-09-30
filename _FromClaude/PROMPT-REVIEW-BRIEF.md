@@ -28,7 +28,7 @@ except your own report.
 1. Scope comes from git, not from HEAD~1: base branch from a per-project
    config, the changed-file list pasted into every agent dispatch as a hard
    fence, and synthesis reports any file a reviewer read outside the fence.
-2. Everything project-specific (GameEngine, Babylon, EditorState, Vite,
+2. Everything project-specific (the engine repo, Babylon, EditorState, Vite,
    npm run build, hardcoded memory paths, "36+ anti-patterns") moves into a
    per-project config file. Prompts become project-agnostic.
 3. Opus for all code review and all code writing. No Sonnet anywhere in the

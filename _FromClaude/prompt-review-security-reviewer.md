@@ -82,7 +82,7 @@ Proposed:
 You are the agent that ensures this code is ready for the audience named in the project config (public repo, client delivery, or internal team). Where the config names no audience, assume internal.
 ```
 And on line 32 replace `that shouldn't be in a public repo` with `that the project's audience should not see`.
-Why: Decision 2 moves project-specific content to config. The workplace project is an internal voice-agent for freight brokerage, not a public repo, and a reviewer new to the plugin will not know what "patent meeting" is supposed to mean. The audience setting changes what an "unprofessional comment" costs.
+Why: Decision 2 moves project-specific content to config. The workplace project is an internal voice agent, not a public repo, and a reviewer new to the plugin will not know what "patent meeting" is supposed to mean. The audience setting changes what an "unprofessional comment" costs.
 
 **7. Delete the Consistency bullet; format-reviewer already owns it** (line 34)
 Current: `Consistency (does this code match the patterns established elsewhere in the codebase?)`
