@@ -19,7 +19,8 @@ folder two levels above this `SKILL.md` (it holds `CONTRACTS.md`,
 
 1. Follow `shared/agent-model.md` Steps A and B: take or ask for the
    agents' model and effort, and check them. Nothing else happens until
-   that is settled.
+   that is settled. Then give its concurrency heads-up if the session's
+   cap calls for one.
 2. Check the scope (below). Stop on one this build does not run.
 3. Follow `commands/review.md` from Step 1 to Step 10, as mapped below.
    Read `CONTRACTS.md` first, as that file says. Read long files in parts
@@ -47,7 +48,7 @@ scope gets that message too, with the hint `try: $djinn-review quick`.
 | `$ARGUMENTS` | the request text after `$djinn-review`, minus any model or effort words `shared/agent-model.md` took |
 | `allowed-tools` and the Rules' Bash list | shell commands from that list, plus `cat`, `sed -n` and `rg` to read; write files with `apply_patch` or a shell heredoc. Handling a git list in a script instead of a list file is fine, as long as no path or config value is typed into a command line (CONTRACTS.md section 9). No build, no test, no command that changes git state |
 | the Agent tool with `subagent_type: "<name>"` and `model: "opus"` | `spawn_agent` per `shared/agent-model.md` Step D, with the message built as below |
-| several Agent calls in one message | spawn up to the concurrency limit (`shared/agent-model.md`), wait for those final answers, then the next batch, until the wave is done |
+| several Agent calls in one message | a rolling window up to the concurrency cap (`shared/agent-model.md`, Concurrency): each final answer frees a slot for the next agent of the wave; the next wave starts only when every agent of this one has answered |
 | an agent "returns" | its `FINAL_ANSWER` message arrives on its own; `wait_agent` only yields until then and never carries it. After spawning a batch, call `wait_agent` with `timeout_ms` 60000 and call it again only while a final answer is still missing; do not narrate the waits |
 | the waves | wave 1 is Step 5 (known-bugchecker), wave 2 is Step 6, wave 3 and up are Step 7's executing agents one per wave, and the last wave is synthesis. `usage.md` uses these numbers |
 | every agent's usage block | Codex gives none: `?` in every `usage.md` cell |

@@ -110,13 +110,31 @@ show the error.
 
 ## What this skill must plan around
 
-- **Concurrency.** The 2026-10-05 session's instructions allowed 4 active
-  agents including the parent, so 3 children at once. Started with
-  `-c agents.max_concurrent_threads_per_session=8`, the same Codex stated 9
-  slots, so 8 children. Read the number your
-  own instructions state and run a parallel wave in batches of that many
-  children. If they state none, use 3, and when a spawn is refused for
-  capacity, wait for a child to finish and spawn the next.
+- **Concurrency.** Codex caps how many agents run at once, and the cap is
+  stated in the session's own instructions ("There are <n> available
+  concurrency slots ... including you"). The parent takes one slot, so
+  `<n> - 1` children run at once. Seen on 2026-10-05: 4 slots by default
+  (3 children); 9 slots when Codex was started with
+  `-c agents.max_concurrent_threads_per_session=8` (8 children). If the
+  instructions state no number, assume 3 children, and when a spawn is
+  refused for capacity, wait for a child to finish and spawn again.
+
+  Run a parallel wave as a rolling window: spawn up to the cap, and each
+  time a child's final answer arrives, spawn the next agent of the wave.
+  The wave ends when every agent in it has answered; nothing from the next
+  wave (synthesis included) starts before that.
+
+  **The heads-up.** When the cap leaves fewer than 8 children, say this
+  once, right after the model choice is settled, and carry on without
+  waiting for a reply:
+
+  ```
+  Heads-up: this Codex session runs 3 agents at a time, so djinn takes them in turns and the review runs slower. Nothing to do now. For future sessions, start Codex with -c agents.max_concurrent_threads_per_session=8, or add max_concurrent_threads_per_session = 8 under [agents] in ~/.codex/config.toml.
+  ```
+
+  with `3` replaced by the real number of children. The run never stops or
+  asks to restart over this: the owner may be mid project with a session
+  they do not want to lose.
 - **No per-agent sandbox.** `spawn_agent` has no sandbox or approval field.
   In the 2026-10-05 test session the child's log listed `workspace-write`
   with the repo as its workspace root, the same as its parent: a write
