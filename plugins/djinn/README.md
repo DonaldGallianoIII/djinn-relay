@@ -385,8 +385,12 @@ every audit from the ledger, and a page per audit with its verdict, a
 findings table you can filter by tier and search, each round's synthesis,
 every agent report, and the run's own files. It is built fresh each time
 into a cache folder outside the repo, so nothing rendered is ever
-committed or stale. `/djinn:view <audit-folder>` opens one audit. Review and
-status end by naming it.
+committed or stale. `/djinn:view <audit-folder>` opens one audit.
+`/djinn:view guide` opens a short guide (`guide.md`): how a review runs,
+how to read an audit, how to ask for the review you want, with a worked
+example, and a catalog of every agent that links to its full prompt.
+Review and status end by naming the viewer; setup and a repo's first
+review offer the guide.
 
 ## Other runtimes
 

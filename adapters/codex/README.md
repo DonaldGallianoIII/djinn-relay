@@ -42,6 +42,9 @@ run the review agents on GPT-6.1-Sol at medium effort, or say what to
 change. Commit `.djinn/` afterward. To set up without reviewing, use
 `$djinn-setup`.
 
+New to djinn? `$djinn-view guide` opens a short guide in your browser,
+with a catalog of every agent that links to its full prompt.
+
 `quick` is a fast first pass with three reviewers. It can miss things the
 standard scope (`$djinn-review`) would catch.
 
@@ -51,9 +54,11 @@ standard scope (`$djinn-review`) would catch.
 |---|---|
 | `$djinn-review quick` | known-bugchecker, bugs, integration, then synthesis |
 | `$djinn-review` | the standard scope: adds format, security and perf |
+| `$djinn-review standard + devils-advocate, cost-complexity-reviewer --goal "..."` | a scope plus agents you name, measured against a goal (the guide has a worked example) |
 | `$djinn-review quick default` | skips the model question |
 | `$djinn-status` | what is still open in the latest audit, in a few lines |
 | `$djinn-view` | opens every audit in your browser |
+| `$djinn-view guide` | the guide: how a review runs, every agent, how to ask for the review you want |
 | `$djinn-setup` | sets djinn up in a repo |
 
 ## Faster reviews

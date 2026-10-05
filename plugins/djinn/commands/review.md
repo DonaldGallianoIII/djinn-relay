@@ -1,6 +1,6 @@
 ---
 name: review
-description: Run the Djinn review relay audit phase. Computes the fence from git against the configured base branch, spawns review agents on Opus, synthesizes findings, writes a timestamped audit folder and a ledger line, and STOPS. Does NOT fix. Usage - /djinn:review [scope] [--base <ref>] [--untracked none | --untracked <path-list-file>] [--goal "<text>"] [+ux] [+a11y] where scope is "standard" (default), "quick", "full", "perf", "cost", "live", "ideas", "map", or a comma-separated agent list.
+description: Run the Djinn review relay audit phase. Computes the fence from git against the configured base branch, spawns review agents on Opus, synthesizes findings, writes a timestamped audit folder and a ledger line, and STOPS. Does NOT fix. Usage - /djinn:review [scope] [--base <ref>] [--untracked none | --untracked <path-list-file>] [--goal "<text>"] [+ux] [+a11y] where scope is "standard" (default), "quick", "full", "perf", "cost", "live", "ideas", "map", a scope plus agents ("standard + devils-advocate, cost-complexity-reviewer"), or a comma-separated agent list.
 allowed-tools: Read, Grep, Glob, Agent, Bash, Write
 ---
 
@@ -47,8 +47,8 @@ back to HEAD~1.
 
 ## Step 2: Parse arguments
 
-`$ARGUMENTS` is a scope word, or a comma-separated list of agent names, plus
-optional flags.
+`$ARGUMENTS` is a scope word, a scope plus agents (below), or a
+comma-separated list of agent names, plus optional flags.
 
 Scopes:
 
@@ -208,6 +208,16 @@ A list naming legibility-reviewer runs it in diff mode, with Step 4's tree
 files; only the `map` scope runs it in map mode.
 Any named agent this command does not spawn is listed under agents not run
 with its reason, never dropped in silence. The folder suffix is `custom`.
+
+Scope plus agents: a scope word, a `+` standing on its own (or the word
+`plus`), and a comma-separated list, for example
+`standard + devils-advocate, cost-complexity-reviewer`. It runs as the
+custom list made of the scope's agents (synthesis and consolidator
+aside) followed by the named ones, with every custom list rule above, so
+`full`'s multiuser gate and every refusal still apply. `+ux` and `+a11y`,
+written with no space, stay flags. Only the scopes that list their agents
+combine this way: `quick`, `standard`, `full`, `perf` and `cost`. context.md
+records `scope: <scope> + <names>`.
 
 Flags: `--base <ref>` overrides `base_branch` for this run only, and
 context.md says so. `--untracked none` leaves every untracked file out of
@@ -684,7 +694,12 @@ or stopped at NO-CHANGES or NOTHING-TO-REVIEW, write the counts as `?`.
   move it. The agent still wrote exactly one file; the copy is yours.
   `review_copy` is opt in and absent by default.
 - For the open list at any later point: `/djinn:status <AUDIT_DIR>`.
-- To read the reports in a browser: `/djinn:view <AUDIT_DIR>`.
+- To read the reports in a browser: `/djinn:view <AUDIT_DIR>`. Say it as
+  "djinn builds a styled page from this audit and opens it in your
+  browser; nothing to host or start", so the owner knows it is one step.
+- On the first review in this repo (the ledger had no earlier review
+  line), add: "New to djinn? `/djinn:view guide` opens a short guide, what
+  every agent does, and how to ask for the review you want.
 - Next step:
   - **SHIP**: "Nothing blocks a merge to <base_branch>. Audit archived at
     `<AUDIT_DIR>`." In the `live` scope: "The blind review found nothing

@@ -18,15 +18,16 @@
  * --src <dir> and --out <dir> override the two folders, for tests.
  *
  * @interacts  reads plugins/djinn/{agents,commands}/*.md,
- *             plugins/djinn/scripts/*.mjs, plugins/djinn/templates/*
- *             and plugins/djinn/CONTRACTS.md; writes the same paths under
+ *             plugins/djinn/scripts/*.mjs, plugins/djinn/templates/*,
+ *             plugins/djinn/CONTRACTS.md and plugins/djinn/guide.md (the
+ *             viewer's guide page); writes the same paths under
  *             adapters/codex/plugin/, and deletes a copy in a copied folder
  *             whose source is gone. setup-project.mjs strips the YAML
  *             marker when it drafts a project's config from the template. The skills under
  *             plugin/skills/ follow the commands/ copies. Output is a pure function of the
  *             sources: no dates, no git calls.
  * @deps       node:fs, node:path, node:crypto, node:url. No packages.
- * @complexity O(f), f source files (43 today)
+ * @complexity O(f), f source files (44 today)
  * @alloc      one source and one output string per file, released per file
  */
 
@@ -44,7 +45,7 @@ const CONFIG = {
   // Each copied folder and the files it takes; the marker comment follows
   // the file's language.
   copiedDirs: { agents: /\.md$/, commands: /\.md$/, scripts: /\.mjs$/, templates: /\.(md|yaml)$/ },
-  contracts: 'CONTRACTS.md',
+  singleFiles: ['CONTRACTS.md', 'guide.md'],
 };
 
 function parseArgs(argv) {
@@ -82,8 +83,10 @@ function plan(src) {
       files.set(join(dir, name), render(text, `plugins/djinn/${dir}/${name}`));
     }
   }
-  const contracts = readFileSync(join(src, CONFIG.contracts), 'utf8');
-  files.set(CONFIG.contracts, render(contracts, `plugins/djinn/${CONFIG.contracts}`));
+  for (const single of CONFIG.singleFiles) {
+    if (!existsSync(join(src, single))) continue;
+    files.set(single, render(readFileSync(join(src, single), 'utf8'), `plugins/djinn/${single}`));
+  }
   return files;
 }
 

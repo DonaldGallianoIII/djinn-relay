@@ -1,6 +1,6 @@
 ---
 name: view
-description: Open this repo's djinn audits in the browser as a styled site, built fresh from audits/ into a cache folder. Read only for the repo. Usage - /djinn:view [<audit-folder>]. With a folder, opens that audit's page; without, the index of every audit.
+description: Open this repo's djinn audits, and djinn's guide, in the browser as a styled site, built fresh into a cache folder. Read only for the repo. Usage - /djinn:view [<audit-folder> | guide]. With a folder, opens that audit's page; with guide, the guide and the agent catalog; without, the index of every audit.
 allowed-tools: Bash
 ---
 

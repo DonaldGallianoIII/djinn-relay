@@ -122,7 +122,7 @@ function report(audit, f, full, latestSynthesis) {
       `note: findings.json verdict ${f.verdict} disagrees with its open list; trust synthesis.md and re-run the round's synthesis.`,
     );
   }
-  out.push(`read it in a browser: $djinn-view ${audit}`);
+  out.push(`read it in your browser (djinn builds and opens the page): $djinn-view ${audit}`);
   return out;
 }
 

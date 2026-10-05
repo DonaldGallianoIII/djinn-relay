@@ -60,7 +60,7 @@ resolved this round: MEDIUM-1, LOW-2
 blocking: R2 HIGH-1, MEDIUM-3
 raised in: R2 HIGH-1 <audit>/round-2
 raised in: MEDIUM-3 <audit>
-read it in a browser: /djinn:view <audit>
+read it in your browser (djinn builds and opens the page): /djinn:view <audit>
 ```
 
 Rules for the listing:
@@ -87,7 +87,8 @@ Rules for the listing:
   supported end to end yet.
 - If `open` is empty, print `open: nothing` and `blocking: none`. That is
   the whole audit fixed and proven, and it is the good news; say it plainly.
-- The last line is always `read it in a browser: /djinn:view <audit>`.
+- The last line is always
+  `read it in your browser (djinn builds and opens the page): /djinn:view <audit>`.
 
 ## Step 4: Check the file agrees with itself
 

@@ -178,7 +178,7 @@ test('default is the short form: header, counts, blocking, where the list is', (
     'open: HIGH 1, MEDIUM 1, LOW 1',
     'blocking: R2 HIGH-1, MEDIUM-1',
     'full list: add --full, or read audits/a/round-2/synthesis.md',
-    'read it in a browser: $djinn-view audits/a',
+    'read it in your browser (djinn builds and opens the page): $djinn-view audits/a',
   ]);
 });
 

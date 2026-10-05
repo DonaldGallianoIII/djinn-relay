@@ -36,7 +36,7 @@ change, pass it: `--base <branch>`, `--build "<cmd>"` or `--build none`,
 `--test "<cmd>"` or `--test none`. Show its lines as they are. `cancel`,
 `stop` or `no` ends here with nothing written.
 
-Finish with: `djinn is set up. Commit .djinn/config.yaml, then try /djinn:review quick.`
+Finish with: `djinn is set up. Commit .djinn/config.yaml, then try /djinn:review quick. New to djinn? /djinn:view guide opens a short guide in your browser: what every agent does and how to ask for the review you want.`
 
 ## Rules
 

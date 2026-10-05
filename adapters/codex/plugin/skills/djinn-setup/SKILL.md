@@ -25,7 +25,8 @@ and carry on. Without Node, say `djinn needs Node; install it, then run $djinn-s
 Follow `<plugin root>/commands/setup.md` Steps 1 to 3 exactly, with
 `${CLAUDE_PLUGIN_ROOT}` read as `<plugin root>`. The script it runs is the
 generated copy of djinn's own `setup-project.mjs`. In the finishing line,
-say `$djinn-review quick` instead of `/djinn:review quick`.
+write every `/djinn:<name>` as `$djinn-<name>` (`$djinn-review quick`,
+`$djinn-view guide`).
 
 ## Step 3: The agent cap
 
