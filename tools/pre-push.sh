@@ -7,8 +7,10 @@
 #     message of <remote sha>..<local sha>, or, for a new branch, of every
 #     commit on <local sha> that no remote ref already holds;
 #   - the tree at <local sha>, which is what the remote shows at its tip;
-# and, once, over the working tree, as the build gate does. A delete sends
-# nothing and is skipped. Any failure stops the push, and so does a missing
+# and, once, over the working tree, as the build gate does. It also runs
+# adapters/codex/build.mjs --check once, so the Codex plugin's generated
+# copies of the agents and CONTRACTS.md cannot be pushed stale. A delete
+# sends nothing and is skipped. Any failure stops the push, and so does a missing
 # local/private-patterns.txt (see check-private.sh for the override).
 # Install once per clone, from the repo root:
 #   git config core.hooksPath tools/hooks
@@ -16,8 +18,9 @@
 #   ln -s ../../tools/pre-push.sh .git/hooks/pre-push
 #
 # @interacts  reads the ref lines git writes to stdin; runs
-#             tools/check-private.sh; writes nothing
-# @deps       bash, git, tools/check-private.sh
+#             tools/check-private.sh and adapters/codex/build.mjs --check;
+#             writes nothing
+# @deps       bash, git, node, tools/check-private.sh, adapters/codex/build.mjs
 # @complexity O(r * check-private.sh): r refs pushed at once (1 or 2)
 # @alloc      none beyond check-private.sh's temp files
 root=$(git rev-parse --show-toplevel) || exit 1
@@ -41,5 +44,10 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 
 bash "$check" || status=1
+# Only where the adapter exists: qa/bot/private-guards.sh runs this hook in
+# scratch repos that carry tools/ alone.
+if [ -f "$root/adapters/codex/build.mjs" ]; then
+  node "$root/adapters/codex/build.mjs" --check || status=1
+fi
 [ "$status" -eq 0 ] || echo "pre-push: FAIL, the push is refused; nothing was sent." >&2
 exit "$status"

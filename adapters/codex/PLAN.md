@@ -41,7 +41,7 @@ load the Claude plugin too. Slice 1 tests that.
 .agents/plugins/marketplace.json      new, points Codex at the adapter
 adapters/codex/
   PLAN.md                             this file
-  build.mjs                           generates plugin/agents/ from plugins/djinn/agents/
+  build.mjs                           generates plugin/agents/ and plugin/CONTRACTS.md
   plugin/
     .codex-plugin/plugin.json
     skills/djinn-status/SKILL.md      one skill per command, hand written
@@ -50,18 +50,30 @@ adapters/codex/
     skills/djinn-dispatch/SKILL.md
     skills/djinn-learn/SKILL.md
     agents/*.md                       GENERATED, do not edit, see build.mjs
+    CONTRACTS.md                      GENERATED, the agents read it by path
 ```
 
 ## The agents: one source, built for Codex
 
 The 31 agent prompts stay in `plugins/djinn/agents/`, the only copy anyone
-edits. `build.mjs` copies each one into `adapters/codex/plugin/agents/`, drops
-the Claude frontmatter (`tools:`, `model:`), and stamps a header saying the
-file is generated and from which source commit. The output is committed,
-because Codex installs from git and only sees what is committed.
+edits. `build.mjs` copies each one, and `CONTRACTS.md`, into
+`adapters/codex/plugin/`, behind a comment naming the source and its
+SHA-256. No dates and no commit ids, so the same sources always build the
+same bytes. The output is committed, because a git install of the plugin
+sees only what is committed.
 
-A check fails when the generated copy is stale, so an edit to a Claude agent
-cannot silently skip the Codex side. It runs from `tools/pre-push.sh`.
+The Claude frontmatter stays. Built in slice 2, this changed from the
+plan's first draft: each agent's own text says "The frontmatter above is
+Claude Code agent metadata", and its `tools:` line is how the review skill
+will know which agents are read-only. The skill names the model on every
+spawn, so `model: opus` in the copy is never read as an instruction.
+
+`node adapters/codex/build.mjs --check` fails on a stale, missing or extra
+copy. `tools/pre-push.sh` runs it, so a push cannot carry stale copies.
+It is not in djinn's `build_cmd`: that would fail every Claude-side fixer
+run that edits an agent until someone rebuilds. Donald's call whether to
+add it. `tools/check-private.sh` lists the generated learn copies beside
+their sources as files allowed to carry the learn marks.
 
 Each skill reads an agent file and hands its text to `spawn_agent` as the
 task, together with the four inputs the agent's own `# Inputs` section lists

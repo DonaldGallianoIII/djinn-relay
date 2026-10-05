@@ -65,9 +65,18 @@ BANNER='SECURE SOURCE. Derived from'
 ROW_KEY='"source_ref"'
 DRAFT_STATUS='learn draft, not yet reviewed'
 # The only files allowed to carry the learn marks: the prompts that define
-# them, the QA scripts that walk them, and this script. audits/ discusses
-# them by name.
+# them, the Codex adapter's generated copies of those prompts
+# (adapters/codex/build.mjs, byte for byte below a marker), the QA scripts
+# that walk them, and this script. audits/ discusses them by name.
 MARK_FILES=(
+  adapters/codex/plugin/CONTRACTS.md
+  adapters/codex/plugin/agents/learn-known.md
+  adapters/codex/plugin/agents/learn-asked.md
+  adapters/codex/plugin/agents/learn-harder.md
+  adapters/codex/plugin/agents/learn-prepare.md
+  adapters/codex/plugin/agents/learn-fact-checker.md
+  adapters/codex/plugin/agents/learn-blind-reader.md
+  adapters/codex/plugin/agents/learn-synthesis.md
   plugins/djinn/CONTRACTS.md
   plugins/djinn/commands/learn.md
   plugins/djinn/agents/learn-known.md
