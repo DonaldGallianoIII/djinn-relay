@@ -1,0 +1,7 @@
+# Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: untested in Codex.
+interface:
+  display_name: "Djinn Setup"
+  short_description: "Set djinn up in this repo"
+  default_prompt: "Use $djinn-setup to set djinn up in this repo."
+policy:
+  allow_implicit_invocation: true

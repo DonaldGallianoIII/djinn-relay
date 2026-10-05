@@ -1,7 +1,7 @@
 {
   "name": "djinn-codex",
-  "version": "0.1.0",
-  "description": "Codex adapter for the djinn code review relay. Built from plugins/djinn in the djinn-relay repo, which stays the only edited source. Slice 1 of the adapter: djinn-status only.",
+  "version": "0.2.0",
+  "description": "Codex adapter for the djinn code review relay. Built from plugins/djinn in the djinn-relay repo, which stays the only edited source. Skills: djinn-setup, djinn-review (quick and standard), djinn-status, djinn-view.",
   "author": { "name": "Donald Galliano III" },
   "repository": "https://github.com/donaldgallianoiii/djinn-relay",
   "keywords": ["code-review", "multi-agent", "relay", "djinn"],
@@ -9,12 +9,14 @@
   "interface": {
     "displayName": "Djinn",
     "shortDescription": "The djinn code review relay, for Codex",
-    "longDescription": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. This build carries djinn-status only. Review, brief, dispatch and learn follow in later slices, see adapters/codex/PLAN.md.",
+    "longDescription": "Multi-agent code review: a team of review agents reads your branch against its base and a synthesis agent merges what they found into one verdict, in an audit folder you can open in the browser. Run $djinn-review in any git repo; the first run sets djinn up. Brief, dispatch and learn are not on Codex yet; see adapters/codex/PLAN.md.",
     "developerName": "Donald Galliano III",
     "category": "Coding",
-    "capabilities": ["Read"],
+    "capabilities": ["Read", "Write"],
     "defaultPrompt": [
-      "Use $djinn-status to show what is still open in the latest audit"
+      "Use $djinn-review quick to audit this branch's change",
+      "Use $djinn-status to show what is still open in the latest audit",
+      "Use $djinn-view to open this repo's audits in my browser"
     ]
   }
 }

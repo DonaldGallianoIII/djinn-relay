@@ -28,12 +28,22 @@ Or, from a local checkout while developing the plugin itself:
 ```
 
 Restart Claude Code after installing. The commands `/djinn:review`,
-`/djinn:brief`, `/djinn:dispatch`, `/djinn:status`, `/djinn:view` and
-`/djinn:learn` now exist in every project.
+`/djinn:brief`, `/djinn:dispatch`, `/djinn:status`, `/djinn:view`,
+`/djinn:setup` and `/djinn:learn` now exist in every project. In a project
+with no `.djinn/config.yaml`, `/djinn:setup` drafts one from what the repo
+shows and writes it on your go; `/djinn:review` does the same by itself
+the first time.
 
 ## Set up a project
 
-Once per repo:
+Once per repo, run `/djinn:setup` (or just run `/djinn:review`, which
+does it for you the first time). It reads the repo, shows you a draft of
+`.djinn/config.yaml` (the base branch, the build and test commands it
+found, the conventions files, the dependency files), and writes it when
+you say go. Everything else stays at the template's default until you need
+it. Commit `.djinn/`.
+
+By hand instead:
 
 1. Create `.djinn/` in the repo root.
 2. Copy `templates/config.yaml` from the plugin into `.djinn/config.yaml`.
@@ -41,7 +51,8 @@ Once per repo:
    has them. Leave the rest as `none` or empty until you need it.
 4. Commit `.djinn/`.
 
-The plugin refuses to run without `base_branch`. It never guesses.
+The plugin refuses to run without `base_branch`. It never guesses: setup
+proposes one from git and you confirm it.
 
 ## Daily use
 
@@ -361,8 +372,8 @@ it and whether a human has reviewed it yet. Trust the `status` line.
 ```
 CONTRACTS.md        the interfaces every agent and command honor
 relay.md            why the flow is shaped this way
-commands/           review, brief, dispatch, status, view, learn
-scripts/            view.mjs, the audit viewer /djinn:view runs (Node, no packages)
+commands/           review, brief, dispatch, status, view, setup, learn
+scripts/            view.mjs (the audit viewer) and setup-project.mjs (drafts .djinn/config.yaml); Node, no packages
 agents/             one prompt per reviewer, plus synthesis, fixer, consolidator, and the seven learn- agents
 templates/          fix-brief.md, config.yaml
 ```

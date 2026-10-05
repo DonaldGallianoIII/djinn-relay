@@ -30,10 +30,17 @@ mismatch, stop before Step 2: append the ledger line with outcome
 which entry (by `name`), and never paste that key anywhere. Where a prompt
 would carry it, it reads `key: withheld, not an env var name`.
 
-If the file or `base_branch` is missing: append the ledger line (Step 9)
-with outcome `ABORTED step 1: no config`, tell the user to copy
-`${CLAUDE_PLUGIN_ROOT}/templates/config.yaml` to `.djinn/config.yaml` and
-fill in `base_branch`, and stop. Do not guess. Do not fall back to HEAD~1.
+If the file is missing: run the steps of `/djinn:setup`
+(`${CLAUDE_PLUGIN_ROOT}/commands/setup.md`) in place, drafting the config
+and asking the owner once. When the owner says go and the file is written,
+read it and carry on from here with the review they asked for. When they
+decline, append the ledger line (Step 9) with outcome
+`ABORTED step 1: no config` and stop.
+
+If the file exists but `base_branch` is missing: append the ledger line
+with outcome `ABORTED step 1: no config`, tell the user to add
+`base_branch` to `.djinn/config.yaml`, and stop. Do not guess. Do not fall
+back to HEAD~1.
 
 ## Step 2: Parse arguments
 

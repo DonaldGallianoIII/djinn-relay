@@ -29,7 +29,8 @@ marketplace and one plugin. Step 8 removes both.
    Codex does not pick up the Claude plugin.
 
 4. Run `codex plugin add djinn-codex@djinn-relay`, then `codex plugin list`
-   again. The row should now read `installed, enabled`, version `0.1.0`.
+   again. The row should now read `installed, enabled`, with the version in
+   `adapters/codex/plugin/.codex-plugin/plugin.json`.
 
 5. Still in the repo, start `codex` and type `$djinn-status`.
    Codex should run one command, `node .../scripts/status.mjs`, and read

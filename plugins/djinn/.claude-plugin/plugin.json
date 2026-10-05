@@ -1,6 +1,6 @@
 {
   "name": "djinn",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Three-phase orchestrated code review relay: audit, deliberate, dispatch. Every run leaves a timestamped audit folder under audits/ and one line in audits/LEDGER.md. Reviewers work inside a git-derived fence against a configured base branch. Fixers execute one brief each inside a work-set guard. The next review round runs automatically after fixes land. Everything runs on Opus. /djinn:learn, a separate pipeline, turns one exam question into multi-angle study material and SFT, DPO and GRPO training data, with every claim cited to the repo or marked UNVERIFIED.",
   "author": { "name": "Donald Galliano III" },
   "keywords": ["code-review", "multi-agent", "relay", "adversarial", "quality", "orchestration", "fix-dispatch", "ledger", "learning", "training-data"],

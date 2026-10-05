@@ -17,6 +17,11 @@ folder two levels above this `SKILL.md` (it holds `CONTRACTS.md`,
 
 ## Order of work
 
+0. If `.djinn/config.yaml` does not exist in the repo root, set djinn up
+   first: follow the `djinn-setup` skill (`skills/djinn-setup/SKILL.md`)
+   Steps 1 and 2. When the owner says go and the file is written, carry on
+   here with the review they asked for. When they decline, `review.md`
+   Step 1's no-config stop applies.
 1. Follow `shared/agent-model.md` Steps A and B: take or ask for the
    agents' model and effort, and check them. Nothing else happens until
    that is settled. Then give its concurrency heads-up if the session's
@@ -53,7 +58,7 @@ written with:
 | every agent's usage block | Codex gives none: `?` in every `usage.md` cell |
 | `model: opus` in `context.md` | `model: <agents model> at <effort>, codex` |
 | `author: Claude Opus (...)` in a header the coordinator writes | `author: Codex (djinn-review)` |
-| `templates/config.yaml` | not shipped in this build; point the owner at `plugins/djinn/templates/config.yaml` in the djinn-relay repo |
+| `templates/config.yaml` | `<plugin root>/templates/config.yaml`, the generated copy; `setup-project.mjs` drafts from it |
 | `/djinn:status`, `/djinn:view`, `/djinn:brief`, `/djinn:dispatch` in Step 10's report | `$djinn-status <AUDIT_DIR>` for status, `$djinn-view <AUDIT_DIR>` for the browser. Brief and dispatch are not on Codex yet: write "brief and dispatch run in Claude Code for now: /djinn:brief <AUDIT_DIR> <id>, then /djinn:dispatch <brief-path>" |
 | a git command | every one, the first `git status` included, carries the CONTRACTS.md section 9 read prefix |
 | a search that may find nothing (`git grep`, `grep`, `rg`, through `xargs` or not) | finding nothing is a normal result, not a failure: run it as `{ <search>; } 2>"$RUN_TMP/err" \|\| true` and treat only a non-empty `$RUN_TMP/err` as an error, so Codex does not show a failed command for an empty result |

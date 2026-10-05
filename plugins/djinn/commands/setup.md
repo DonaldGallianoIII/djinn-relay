@@ -1,0 +1,52 @@
+---
+name: setup
+description: Set djinn up in this repo. Drafts .djinn/config.yaml from the template and what the repo shows (base branch, build and test commands, conventions files, dependency files), shows it, and writes it only after the owner says go. Never overwrites an existing config. Usage - /djinn:setup
+allowed-tools: Bash
+---
+
+# Djinn Setup
+
+## Step 1: Draft
+
+From the repo root, run:
+
+```
+node ${CLAUDE_PLUGIN_ROOT}/scripts/setup-project.mjs
+```
+
+It writes nothing. Show its lines as they are. If it says
+`already set up`, say djinn is ready and stop. If it says
+`run this from the root of a git repo`, say so and stop.
+
+## Step 2: Ask once
+
+Then send exactly this and end your turn:
+
+```
+Reply go to write .djinn/config.yaml as drafted, or tell me what to change (base branch, build command, test command).
+```
+
+If `base_branch` reads `not found`, ask for the base branch instead; it is
+the one value djinn cannot run without.
+
+## Step 3: Write
+
+On `go`, run the same command with `--write`. When the owner named a
+change, pass it: `--base <branch>`, `--build "<cmd>"` or `--build none`,
+`--test "<cmd>"` or `--test none`. Show its lines as they are. `cancel`,
+`stop` or `no` ends here with nothing written.
+
+Finish with: `djinn is set up. Commit .djinn/config.yaml, then try /djinn:review quick.`
+
+## Rules
+
+- The script writes the file; never write or edit `.djinn/config.yaml`
+  yourself, and never overwrite one that exists.
+- Every key the script leaves at the template default stays that way.
+  The file explains each one; the owner fills them when they need them.
+
+## Runtime notes
+
+Claude Code specific: `allowed-tools`, `${CLAUDE_PLUGIN_ROOT}`. The script
+is plain Node with no packages. Spawns no agent, so it carries no model
+line.
