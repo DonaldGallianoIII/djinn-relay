@@ -188,7 +188,10 @@ Custom list: each name must match a file in `${CLAUDE_PLUGIN_ROOT}/agents/`.
 On any unknown name, stop and list the valid names: every file in
 `agents/` except those whose name starts `learn-`, which this step refuses
 by name. known-bugchecker is
-prepended and synthesis appended unless the list is exactly `gap-hunter`.
+prepended and synthesis appended unless the list is exactly `gap-hunter`,
+or the owner's request rules synthesis out in words (`no synthesis`, or
+`<agent> only`, as in "known-bugchecker only"). A run that ends without
+synthesis has the verdict `NO-SYNTHESIS` (Step 9); say so in context.md.
 A list naming dependency-reviewer runs it in Step 7 with its per-agent
 block. A list naming consolidator runs it after synthesis as in Step 8b.
 A list naming legibility-reviewer runs it in diff mode, with Step 4's tree
@@ -282,6 +285,15 @@ number is Donald's to set.
 5. If the fence is empty: append the ledger line with outcome
    `NO-CHANGES`, do not create an audit folder, tell the user, stop. In the
    `map` scope this fires only when the tree itself is empty.
+5b. If every fenced file is empty: feed the fence list to
+   `tr '\n' '\0' < <fence list> | xargs -0 -r wc -c --` and read the byte
+   counts, ignoring `wc`'s own `total` line. When every fenced path is
+   listed at `0` bytes, append the ledger line with outcome
+   `NOTHING-TO-REVIEW`, do not create an audit folder, tell the user
+   `every fenced file is empty (<n> files), nothing to review`, and stop. A deleted path makes `wc` report an error instead of
+   a count, so a fence holding a deletion is never all empty and goes on to
+   review. One empty file beside non-empty ones is reviewed with the rest;
+   agents list it as CONTRACTS.md section 3 says.
 6. Full patch:
    `git diff --no-ext-diff --no-textconv <merge-base> -- . ':!audits' <learn skip> <the section 9 secret pathspecs>`,
    with the ten pathspecs copied exactly from CONTRACTS.md section 9 (the
@@ -415,7 +427,11 @@ for a newline is listed at the end of section 1 as
 ## The fence block
 
 Paste this into every agent prompt in Steps 5, 6, 7, and 8, unchanged
-except for the fence contents and config values:
+except for the fence contents, the config values, and `<CONTRACTS>`, which
+is the absolute path `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` expands to. The
+agent runs in the project repo, where a bare `CONTRACTS.md` does not
+exist; without the path it falls back on its own definition and can drift
+from the contract in silence:
 
 ```
 FENCE. The files under review are exactly:
@@ -446,9 +462,10 @@ it.
 
 Full patch: <AUDIT_DIR>/input-diff.patch
 
-Start your report with the attribution header from CONTRACTS.md section 7,
+Contracts: <CONTRACTS>. Read sections 3 and 7 there.
+Start your report with the attribution header from its section 7,
 status "audit finding, not yet deliberated". Use the report format from
-CONTRACTS.md section 3. Write exactly one file:
+its section 3. Write exactly one file:
 <AUDIT_DIR>/agents/<your-name>.md. Reply with only the header line and
 your Counts.
 ```
@@ -617,10 +634,12 @@ with the header row from CONTRACTS.md section 6 if it is missing. Format:
 | <YYYY-MM-DD HH:MM> | review <scope> | <AUDIT_DIR or none> | base=<base_branch>@<merge-base short sha> files=<n> | <verdict> (<scope> scope; <agents not run> not run) | H<n> M<n> L<n> D<n> R<n> failed=<list or none> outside-fence=<n> tokens=<total or ?> |
 ```
 
-Verdict is one of SHIP, FIX THEN SHIP, ESCALATE, IDEAS, NO-CHANGES, or
-`ABORTED step <k>: <reason>`. Counts come from the synthesis Counts block.
-For ideas scope, counts are R<n> only. If the run aborted before
-synthesis, write the counts as `?`.
+Verdict is one of SHIP, FIX THEN SHIP, ESCALATE, IDEAS, NO-CHANGES,
+NOTHING-TO-REVIEW, NO-SYNTHESIS, or `ABORTED step <k>: <reason>`. Counts
+come from the synthesis Counts block. For ideas scope, counts are R<n>
+only. For NO-SYNTHESIS, sum each agent's Counts line and add
+`no synthesis` to the detail column. If the run aborted before synthesis,
+or stopped at NO-CHANGES or NOTHING-TO-REVIEW, write the counts as `?`.
 
 ## Step 10: Report to the user
 
@@ -666,6 +685,9 @@ synthesis, write the counts as `?`.
   - **ESCALATE**: "Agents disagreed on a fact the code could not settle.
     Open `<AUDIT_DIR>/synthesis.md`, section Conflicts Resolved."
   - **ideas**: "gap-hunter output at `<AUDIT_DIR>/agents/gap-hunter.md`."
+  - **NO-SYNTHESIS**: "No synthesis ran, so there is no verdict and no
+    findings.json. Agent reports are in `<AUDIT_DIR>/agents/`; nothing
+    here says the change is safe to merge."
 
 ## proof-runner, on request only
 

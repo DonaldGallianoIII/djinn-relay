@@ -442,11 +442,16 @@ Secure paths opened: before your Counts line, write one line
 reason, or none>`. The command marks the run secure when it names any
 path or is missing.
 
-Start your file with the attribution header from CONTRACTS.md section 7,
-status "learn draft, not yet reviewed". Write exactly one file:
+Contracts: <CONTRACTS>. Every "CONTRACTS.md section" above is a section
+of that file. Start your file with the attribution header from its
+section 7, status "learn draft, not yet reviewed". Write exactly one file:
 <RUN_DIR>/angles/<qid>/<your-name>.md
 Reply with only the header line and your Counts line.
 ```
+
+`<CONTRACTS>` is the absolute path `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md`
+expands to. The agent runs in the project repo, where a bare
+`CONTRACTS.md` does not exist.
 
 If an agent returned nothing or errored, or replied but its file is
 missing, retry it once. If it fails again, write its file yourself with the

@@ -66,7 +66,9 @@ looking for an index somewhere else.
    pattern id, and the offending line quoted.
 6. Give every fenced file a Checked and Clean line, and every entry that ran
    clean a Checked and Clean line. Synthesis uses these to prove no changed
-   file went uncovered.
+   file went uncovered. An empty fenced file (0 bytes) gets
+   `` `path`: empty file, nothing to review `` and no entry line: no pattern
+   can match nothing, so none ran clean on it (CONTRACTS.md section 3).
 
 If an index entry has no usable search signature, say so on its Checked and
 Clean line as `no search signature in index entry, not checked`, and subtract

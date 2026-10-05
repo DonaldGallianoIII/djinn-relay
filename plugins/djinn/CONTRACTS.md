@@ -141,6 +141,11 @@ A finding whose file:line is outside the fence goes under a `## Blast
 radius` section between Findings and Checked and Clean, never under
 Findings.
 
+A fenced file that is empty (0 bytes) has nothing to check. Its Checked
+and Clean line reads `` `path`: empty file, nothing to review `` and
+claims no check ran clean on it. An empty file and a checked, sound file
+must never read alike: synthesis could turn the second reading into SHIP.
+
 Agents whose main output is not a finding list (pipe-connector's dependency
 map, consolidator's index proposals) put that output in their own sections
 before Findings, and still end with Checked and Clean and Files read
