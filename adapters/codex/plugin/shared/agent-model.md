@@ -135,12 +135,33 @@ show the error.
   waiting for a reply:
 
   ```
-  Heads-up: this Codex session runs 3 agents at a time, so djinn takes them in turns and the review runs slower. Nothing to do now. For future sessions, start Codex with -c agents.max_concurrent_threads_per_session=8, or add max_concurrent_threads_per_session = 8 under [agents] in ~/.codex/config.toml.
+  Heads-up: this Codex session runs 3 agents at a time, so djinn takes them in turns and the review runs slower. Nothing to do now. For future sessions, start Codex with -c agents.max_concurrent_threads_per_session=8, or add max_concurrent_threads_per_session = 8 under [agents] in ~/.codex/config.toml. I can set that up for you when this run ends.
   ```
 
   with `3` replaced by the real number of children. The run never stops or
   asks to restart over this: the owner may be mid project with a session
   they do not want to lose.
+
+  **The offer.** When the heads-up was given, the skill's final report ends
+  with one more line:
+
+  ```
+  Want me to raise the cap for future Codex sessions? Reply set it up.
+  ```
+
+  Only on a reply of `set it up` (or a plain yes to that line), run once:
+
+  ```
+  node <plugin root>/shared/scripts/set-agent-cap.mjs
+  ```
+
+  `config.toml` is outside the repo, so Codex asks the owner to approve
+  that one command; ask for exactly that command and nothing broader. Show
+  the script's one line of output as it is. The script backs the file up,
+  changes or adds only that one setting, and puts the backup back if Codex
+  can no longer load the file. It never touches the running session; the
+  new cap applies from the next one. Never edit `config.toml` any other
+  way, and never run the script unasked.
 - **No per-agent sandbox.** `spawn_agent` has no sandbox or approval field.
   In the 2026-10-05 test session the child's log listed `workspace-write`
   with the repo as its workspace root, the same as its parent: a write
