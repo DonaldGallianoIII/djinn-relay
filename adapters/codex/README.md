@@ -48,6 +48,11 @@ with a catalog of every agent that links to its full prompt.
 `quick` is a fast first pass with three reviewers. It can miss things the
 standard scope (`$djinn-review`) would catch.
 
+**Answering djinn's questions.** djinn asks through Codex's picker (the
+model, the first-run setup, and dispatch's go, rounds, tests and fixers).
+The picker does not pop up on its own: press **Shift+Left** to open it.
+Or type `go` to take every default.
+
 ## Commands
 
 | Type | What it does |

@@ -194,8 +194,11 @@ narrowest test per fix under memory caps, is Claude Code only for now.
 
 ## On Codex
 
-- The first review asks which model the agents run on; reply `go` for the
-  default, or name one. Add `default` to the command to skip the question.
+- djinn's questions (the model, and dispatch's go, rounds, tests and
+  fixers) come up in Codex's picker, which does not open by itself: press
+  **Shift+Left** to answer. Typing `go` instead takes every default.
+- The first review asks which model the agents run on. Add `default` to
+  the command to skip the question.
 - Codex runs 3 agents at a time unless started with
   `-c agents.max_concurrent_threads_per_session=8`; djinn tells you and
   offers to make it permanent.

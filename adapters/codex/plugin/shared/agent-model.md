@@ -27,14 +27,17 @@ every spawn so the run uses what was chosen, whatever the parent is on.
    it names and the default for the rest. Do not ask.
 2. If the request says `default` or `defaults`, use both defaults. Do not
    ask.
-3. Otherwise, before anything else, send exactly this and end your turn:
+3. Otherwise, before anything else, ask with the picker (see "Asking
+   with the picker" below): one question, title `Agents' model`, options
+   `gpt-6.1-sol at medium (default)`, `gpt-6.1-sol at high`,
+   `gpt-6.1-sol at low`. Then print exactly:
 
    ```
    djinn agents will run on gpt-6.1-sol at medium effort.
-   Reply go to use that, or name a model and effort.
+   Pick in the picker (Shift+Left opens it), or type go to use that, or name a model and effort.
    ```
 
-   Start the run's other steps only after the reply, so a run the owner
+   Start the run's other steps only after the answer, so a run the owner
    abandons leaves nothing behind.
 4. A reply of `go`, `yes`, `ok`, `default` or `defaults` means the
    defaults. A reply naming a model, an effort or both is taken as in
@@ -42,12 +45,27 @@ every spawn so the run uses what was chosen, whatever the parent is on.
    question (`what options?`) gets the available models and efforts from
    Step B's lists, then the same prompt again. No reply is not a yes: wait.
 
-`request_user_input` is not used. In Codex 0.160.0 its own description
-says it is available in Plan mode only, and a skill cannot choose the mode
-it runs in. `request_user_input_async` exists and returns at once; it is
-not used either, because the run must not start until the owner has
-answered, and a plain question that ends the turn does that with nothing
-left behind. This skill's instruction to stop and ask is explicit.
+## Asking with the picker
+
+Every djinn question with fixed choices goes through
+`request_user_input_async`: one call, `questions` a list of
+`{ title, options }`, the current choice always first. Tested in Codex
+0.160.0 on 2026-10-05: it works in Default mode, it returns
+`{"accepted":true}` at once, each answer then arrives as its own message
+(`{"answer", "question", "questionItemId"}`), and the picker does not open
+by itself: the owner presses Shift+Left. So:
+
+- Right after the call, print one line telling the owner to press
+  Shift+Left to answer, or to type the answer instead.
+- Wait until every question has an answer, or the owner types one (`go`
+  means every question at its first choice; `cancel` or `stop` ends the
+  run with nothing written). Act on nothing until then.
+- If the call is refused or the tool is missing, ask the same questions as
+  numbered text options and end the turn.
+
+`request_user_input`, the other question tool, is not used: in Codex
+0.160.0 its own description says it works in Plan mode only, and a skill
+cannot choose the mode it runs in.
 
 ## Step B: check the choice before the first spawn
 

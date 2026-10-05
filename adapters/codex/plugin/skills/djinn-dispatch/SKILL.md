@@ -42,6 +42,7 @@ prefix, quiet searches, runtime tag) applies here the same way. On top:
 | the fixer's return text | its `FINAL_ANSWER`, the Fix Report, used as dispatch.md's Collect step says. It is written to `fixes/<id>-report.md`, never printed |
 | "Max effort is set by the fixer's own prompt" | the effort chosen in item 1, passed on every spawn |
 | `author: Claude Opus (fixer agent, via /djinn:dispatch)` | `author: Codex <agents model> (fixer agent, via djinn-dispatch)` |
+| the question tool (`AskUserQuestion`) at Step 5's gate | `request_user_input_async` per `shared/agent-model.md`, Asking with the picker: the same questions and options, each option's `(Recommended)` dropped (the first option is the plan's choice). Print `Answer in the picker (Shift+Left opens it), or type go to run the plan as shown.` and wait for every answer |
 | `harness_timeout_max_s` | Claude Code's Bash tool limit. Codex keeps a long command running in its exec session: poll it until it ends. Treat the key as none on Codex |
 | `/djinn:review`, `/djinn:brief`, `/djinn:status`, `/djinn:view` in reports | `$djinn-review`, `$djinn-brief`, `$djinn-status`, `$djinn-view` |
 

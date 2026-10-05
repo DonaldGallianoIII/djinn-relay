@@ -22,10 +22,13 @@ folder two levels above this `SKILL.md` (it holds `CONTRACTS.md`,
    If it is missing, set djinn up first: follow the `djinn-setup` skill
    (`skills/djinn-setup/SKILL.md`) Steps 1 and 2, with one change, so the
    owner answers once and not twice: unless the request already named the
-   model or said `default`, setup's question becomes
-   `Reply go to write .djinn/config.yaml as drafted and run the review agents on gpt-6.1-sol at medium effort, or tell me what to change.`
-   A `go` to it settles both the config and `shared/agent-model.md`
-   Step A (chosen by: reply). When the file is written, carry on here with
+   model or said `default`, setup's question and the model question go in
+   one picker call (`shared/agent-model.md`, Asking with the picker): title
+   `Write .djinn/config.yaml as drafted?`, options `Write it`, `Stop`; and
+   title `Agents' model`, options as Step A gives them. Print
+   `Pick in the picker (Shift+Left opens it), or type go to write the config and run on gpt-6.1-sol at medium.`
+   A `go`, or both first choices, settles the config and Step A (chosen
+   by: reply). When the file is written, carry on here with
    the review they asked for, and `review.md` Step 1's self-setup rules
    apply (the new config stays out of the fence). When they decline,
    `review.md` Step 1's no-config stop applies.
