@@ -135,14 +135,15 @@ Fixing is two commands and a gate you control.
 
 1. **Brief.** `brief <audit> <id>` (for example
    `$djinn-brief audits/2026-10-05-1125-quick MEDIUM-1`) writes a fix
-   brief into the audit's `fixes/` folder: the finding, the work set (the
+   brief for that one finding into the audit's `fixes/` folder: the finding, the work set (the
    exact files the fix may touch), the success criteria, and what it depends
    on. It changes no code. Read it and edit it; it is the contract.
-2. **Dispatch.** `dispatch <brief> [<brief> ...]` reads the briefs and
-   prints a plan: which fixes run side by side (their work sets do not
+2. **Dispatch.** `dispatch <brief> [<brief> ...]` takes one brief or
+   several, one per finding you want fixed, and prints a plan: which fixes run side by side (their work sets do not
    overlap), which wait, the build and test commands it will run. Then it
    **stops and waits for your `go`**. Nothing changes before that.
-3. **The fixer.** Each brief gets one fresh fixer agent, which:
+3. **The fixer.** One finding, one brief, one fixer: each brief gets its
+   own fresh fixer agent, its own report and its own diff. The fixer:
    - confirms the defect is there before editing anything;
    - runs your build first, to know where it started;
    - edits only the files in the work set. If the fix needs another file,
