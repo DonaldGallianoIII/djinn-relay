@@ -43,9 +43,10 @@ proof-runner; without it, proof-runner never runs.
 this dispatch, and the plan and the ledger line say so.
 
 `--no-review` is a flag, not a path. It stops after the fixes and the
-landing lane: Step 7 runs its landing lane only, writing the output to
-`<audit-folder>/fixes/test-output-<YYYYMMDD-HHMM>.txt`, spawns no round,
-and writes no round folder. The plan, the ledger line (`round=skipped,
+landing lane: Step 7 runs its landing lane, writing the output to
+`<audit-folder>/fixes/test-output-<YYYYMMDD-HHMM>.txt`, and its two git
+checks (scope leaks, files written by test runs), spawns no round, and
+writes no round folder. The plan, the ledger line (`round=skipped,
 --no-review`) and the final report say so, and the final report adds: "The
 fixes are not reviewed. Review them with /djinn:review; that starts a new
 audit." The gate's questions (Step 5) set it too.
@@ -373,9 +374,14 @@ line again and continue.
 
 ## Step 7: Next audit round (automatic unless --no-review)
 
-With `--no-review`: run item 2's landing lane only (its output to
+With `--no-review`: run item 2's landing lane (its output to
 `<audit-folder>/fixes/test-output-<YYYYMMDD-HHMM>.txt`, not a round
-folder), skip every other item here, and go to Step 8. No round number is
+folder), then item 3's two checks against those listings and the third
+listing it takes: the scope leaks (a changed or new file in no landed
+work set and not in the original `fence.txt`) and the files written by
+the test runs, both for the final report. They are git listings, no
+agent, so skipping the review never skips them. Write the listings into
+`$RUN_TMP` only, skip every other item here, and go to Step 8. No round number is
 taken, so a later dispatch's round counts as if this one had none.
 
 After all batches land:
