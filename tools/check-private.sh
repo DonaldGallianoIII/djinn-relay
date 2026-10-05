@@ -70,6 +70,7 @@ DRAFT_STATUS='learn draft, not yet reviewed'
 # that walk them, and this script. audits/ discusses them by name.
 MARK_FILES=(
   adapters/codex/plugin/CONTRACTS.md
+  adapters/codex/plugin/commands/learn.md
   adapters/codex/plugin/agents/learn-known.md
   adapters/codex/plugin/agents/learn-asked.md
   adapters/codex/plugin/agents/learn-harder.md

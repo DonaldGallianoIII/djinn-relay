@@ -1,0 +1,10 @@
+# Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: untested in Codex.
+# allow_implicit_invocation is true so the skill appears in the catalog at all
+# (false hides it; see adapters/codex/PLAN.md). An unasked run still stops at
+# the model question in shared/agent-model.md before it writes anything.
+interface:
+  display_name: "Djinn Review"
+  short_description: "Audit the current change with djinn's review agents"
+  default_prompt: "Use $djinn-review quick to audit this branch's change."
+policy:
+  allow_implicit_invocation: true

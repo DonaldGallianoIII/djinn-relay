@@ -1,8 +1,9 @@
 /**
- * Build the Codex plugin's copies of djinn's agent prompts and contracts.
+ * Build the Codex plugin's copies of djinn's agents, commands and contracts.
  * Codex installs only adapters/codex/plugin/ into its cache, so a skill
- * there cannot read plugins/djinn/. This copies every agent file and
- * CONTRACTS.md in, each behind a generated-file comment that names its
+ * there cannot read plugins/djinn/. This copies every agent file, every
+ * command file and CONTRACTS.md in, each behind a generated-file comment
+ * that names its
  * source and the source's SHA-256. plugins/djinn stays the only copy
  * anyone edits. The Claude frontmatter is kept: each agent's own text
  * refers to it, and its tools line says which agents are read-only.
@@ -16,13 +17,14 @@
  *                                            that is stale, missing or extra
  * --src <dir> and --out <dir> override the two folders, for tests.
  *
- * @interacts  reads plugins/djinn/agents/*.md and plugins/djinn/CONTRACTS.md;
- *             writes adapters/codex/plugin/agents/*.md and
- *             adapters/codex/plugin/CONTRACTS.md, and deletes an agents/
- *             copy whose source is gone. Output is a pure function of the
+ * @interacts  reads plugins/djinn/{agents,commands}/*.md and
+ *             plugins/djinn/CONTRACTS.md; writes the same paths under
+ *             adapters/codex/plugin/, and deletes a copy in agents/ or
+ *             commands/ whose source is gone. The skills under
+ *             plugin/skills/ follow the commands/ copies. Output is a pure function of the
  *             sources: no dates, no git calls.
  * @deps       node:fs, node:path, node:crypto, node:url. No packages.
- * @complexity O(f), f source files (32 today)
+ * @complexity O(f), f source files (37 today)
  * @alloc      one source and one output string per file, released per file
  */
 
@@ -37,9 +39,9 @@ const REPO = resolve(HERE, '../..');
 const CONFIG = {
   src: join(REPO, 'plugins/djinn'),
   out: join(HERE, 'plugin'),
-  agentsDir: 'agents',
+  copiedDirs: ['agents', 'commands'],
   contracts: 'CONTRACTS.md',
-  agentFile: /\.md$/,
+  copiedFile: /\.md$/,
 };
 
 function parseArgs(argv) {
@@ -66,23 +68,26 @@ function render(sourceText, sourceLabel) {
 /** Every output path and the content it should hold. */
 function plan(src) {
   const files = new Map();
-  const agentsSrc = join(src, CONFIG.agentsDir);
-  for (const name of readdirSync(agentsSrc).filter((n) => CONFIG.agentFile.test(n)).sort()) {
-    const text = readFileSync(join(agentsSrc, name), 'utf8');
-    files.set(join(CONFIG.agentsDir, name), render(text, `plugins/djinn/${CONFIG.agentsDir}/${name}`));
+  for (const dir of CONFIG.copiedDirs) {
+    for (const name of readdirSync(join(src, dir)).filter((n) => CONFIG.copiedFile.test(n)).sort()) {
+      const text = readFileSync(join(src, dir, name), 'utf8');
+      files.set(join(dir, name), render(text, `plugins/djinn/${dir}/${name}`));
+    }
   }
   const contracts = readFileSync(join(src, CONFIG.contracts), 'utf8');
   files.set(CONFIG.contracts, render(contracts, `plugins/djinn/${CONFIG.contracts}`));
   return files;
 }
 
-/** Copies in out/agents that no source produces. */
+/** Copies in the copied folders that no source produces. */
 function extras(out, files) {
-  const dir = join(out, CONFIG.agentsDir);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .map((n) => join(CONFIG.agentsDir, n))
-    .filter((p) => !files.has(p));
+  return CONFIG.copiedDirs.flatMap((dir) => {
+    const full = join(out, dir);
+    if (!existsSync(full)) return [];
+    return readdirSync(full)
+      .map((n) => join(dir, n))
+      .filter((p) => !files.has(p));
+  });
 }
 
 function main(argv) {
