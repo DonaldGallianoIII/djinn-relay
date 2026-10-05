@@ -111,7 +111,9 @@ show the error.
 ## What this skill must plan around
 
 - **Concurrency.** The 2026-10-05 session's instructions allowed 4 active
-  agents including the parent, so 3 children at once. Read the number your
+  agents including the parent, so 3 children at once. Started with
+  `-c agents.max_concurrent_threads_per_session=8`, the same Codex stated 9
+  slots, so 8 children. Read the number your
   own instructions state and run a parallel wave in batches of that many
   children. If they state none, use 3, and when a spawn is refused for
   capacity, wait for a child to finish and spawn the next.

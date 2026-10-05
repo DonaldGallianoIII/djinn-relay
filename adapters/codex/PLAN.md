@@ -130,6 +130,27 @@ a live Codex 0.160.0 session through the message folder:
 - `wait_agent` returns no text; each child's final answer arrives as its
   own message.
 
+## Slice 4, first run (2026-10-05)
+
+`$djinn-review quick` ran end to end on a scratch repo (a cart module with
+a planted off-by-one and an `innerHTML` line): model question answered
+`go`, known-bugchecker alone, then bugs, integration and accessibility (its
+UI trigger fired) together, then synthesis. Verdict FIX THEN SHIP,
+H0 M1 L1; the off-by-one is MEDIUM-1. The `innerHTML` hit is LOW because
+the test index wrote `Tier:` where known-bugchecker reads `Tier when hit:`,
+which is the agent following its own rule. Nothing outside `audits/`
+changed. Codex listed 15 places the skill or review.md did not fit; the
+skill now maps the ones that are the adapter's to fix. Three agents wrote
+dashes, so every spawn message now repeats the section 11 rule.
+
+The concurrency cap is a Codex setting:
+`-c agents.max_concurrent_threads_per_session=8` gave 9 slots. Whether to
+set it in `~/.codex/config.toml` for good is Donald's call.
+
+Found in djinn itself, not fixed: synthesis's status line
+`agent output, not yet deliberated` is not one of the statuses CONTRACTS.md
+section 7 allows.
+
 ## Slices, in order
 
 Each slice is built, tested by Donald in Codex, and agreed before the next.
