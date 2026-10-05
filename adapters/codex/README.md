@@ -54,12 +54,15 @@ standard scope (`$djinn-review`) would catch.
 |---|---|
 | `$djinn-review quick` | known-bugchecker, bugs, integration, then synthesis |
 | `$djinn-review` | the standard scope: adds format, security and perf |
+| `$djinn-review full` | every reviewer, the executing agents (devils-advocate, test-strategist, gate-auditor) and consolidator |
 | `$djinn-review standard + devils-advocate, cost-complexity-reviewer --goal "..."` | a scope plus agents you name, measured against a goal (the guide has a worked example) |
 | `$djinn-review quick default` | skips the model question |
 | `$djinn-status` | what is still open in the latest audit, in a few lines |
 | `$djinn-view` | opens every audit in your browser |
 | `$djinn-view guide` | the guide: how a review runs, every agent, how to ask for the review you want |
 | `$djinn-setup` | sets djinn up in a repo |
+| `$djinn-brief <audit> <id>` | writes a fix brief for one finding: the files the fix may touch, what done means |
+| `$djinn-dispatch <brief>` | shows a plan, waits for your go, has a fixer agent apply each brief, then reviews again |
 
 ## Faster reviews
 
@@ -70,8 +73,9 @@ reply `set it up` when a review offers to make that permanent.
 
 ## Not on Codex yet
 
-- `brief` and `dispatch` (turning findings into fixes) and `learn`. Use them
-  from Claude Code for now.
-- The `full`, `perf`, `cost`, `live`, `ideas` and `map` scopes.
+- `learn`, and `dispatch --prove`. Use them from Claude Code for now.
+- The fixer stays inside its brief's files by instruction; Codex cannot
+  lock it. The guide's "How fixing works" section says what catches a slip.
+- The `perf`, `cost`, `live`, `ideas` and `map` scopes.
 - Read-only reviewers are read-only by instruction: Codex cannot lock one
   agent to read-only the way Claude Code does.

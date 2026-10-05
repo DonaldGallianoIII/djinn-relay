@@ -166,6 +166,19 @@ section 7 allows.
 Quick and standard are open in the skill. Full, perf, cost, live, ideas
 and map are not yet run on Codex.
 
+## Slice 5 and full scope, built (2026-10-05)
+
+`djinn-brief` and `djinn-dispatch` map `commands/brief.md` and
+`commands/dispatch.md` the way `djinn-review` maps review: the shipped
+command is the contract, the skill maps its Claude mechanisms. Dispatch
+keeps its one gate (the plan, then go), runs fixers per batch as a rolling
+window with the chosen model and effort, writes each Fix Report from the
+fixer's final answer, and runs round 2 through the review mapping.
+`--prove` is refused on Codex until proof-runner's memory caps are tested
+there. The work set is held by instruction; dispatch's scope leak check and
+the next round catch a slip. `full` is open in djinn-review. None of this
+has run live yet: `qa/human/codex-dispatch.md`.
+
 ## Slices, in order
 
 Each slice is built, tested by Donald in Codex, and agreed before the next.

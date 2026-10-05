@@ -1,0 +1,9 @@
+# Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: untested in Codex.
+# Implicit invocation stays on so the skill is in the catalog; dispatch
+# still changes nothing before the owner says go to its printed plan.
+interface:
+  display_name: "Djinn Dispatch"
+  short_description: "Apply djinn fix briefs, then review again"
+  default_prompt: "Use $djinn-dispatch on the briefs in the latest audit's fixes folder."
+policy:
+  allow_implicit_invocation: true

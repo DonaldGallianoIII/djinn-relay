@@ -1,0 +1,7 @@
+# Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: untested in Codex.
+interface:
+  display_name: "Djinn Brief"
+  short_description: "Write a fix brief for one djinn finding"
+  default_prompt: "Use $djinn-brief on the latest audit's first blocking finding."
+policy:
+  allow_implicit_invocation: true
