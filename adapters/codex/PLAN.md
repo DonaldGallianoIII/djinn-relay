@@ -114,14 +114,29 @@ Each slice is built, tested by Donald in Codex, and agreed before the next.
 Every slice ships with `qa/human/codex-<slice>.md`. A bot script and a
 programmatic test are added where there is a deterministic loop to replay.
 
+## Answered by slice 1 (2026-10-05)
+
+1. Codex does not pick up the Claude plugin. With
+   `.agents/plugins/marketplace.json` present, `codex plugin list` shows only
+   `djinn-codex@djinn-relay`.
+2. Codex copies the plugin folder, and only that folder, into
+   `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`. Anything a
+   skill reads must sit inside `adapters/codex/plugin/`, which is why the
+   generated agents go in `plugin/agents/`. Running `codex plugin add` again
+   refreshes the cache without a version bump.
+3. Still open: whether a skill can name a file in its own plugin by a path
+   Codex resolves for it. Slice 2 tests it with the first generated agent.
+
+## Found in passing, in djinn itself, not fixed
+
+`/djinn:status` prints `raised in: <audit>/round-<k>`, but this repo's
+round 3 lives in its own folder (`audits/2026-09-29-1654-custom`, whose
+findings.json names `audits/2026-09-29-1303-custom` round 3). The printed
+path does not exist. Both runtimes follow the same rule, so the fix belongs
+in `plugins/djinn/commands/status.md` first. Owner's call.
+
 ## Open questions
 
-1. Does Codex also pick up the Claude plugin through
-   `.claude-plugin/marketplace.json`, and list djinn twice?
-2. When Codex installs a plugin, does it copy it into
-   `~/.codex/plugins/cache/`? If yes, can a skill find `../../agents/` by a
-   path relative to its own folder, or does Codex expose a plugin root the way
-   Claude exposes `${CLAUDE_PLUGIN_ROOT}`?
 3. Does `spawn_agent` run agents truly in parallel, and can a read-only agent
    be held to read-only? Codex agent configs know `read-only` and
    `workspace-write`; whether a spawn can set it is unchecked.

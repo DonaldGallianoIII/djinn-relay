@@ -1,0 +1,120 @@
+---
+name: djinn-status
+description: Print what is still open in a djinn audit, across every review round, from its findings.json. Read only; writes nothing and appends no ledger line. Name an audit folder, or none for the most recent audit under audits/.
+---
+
+<!-- Written by Claude Opus 5.5 for Donald, 2026-10-05, hand ported from
+plugins/djinn/commands/status.md at djinn 2.4.0. Status: untested in Codex,
+not reviewed. Edit the Claude command first, then port the change here. -->
+
+# Djinn Status
+
+Answer one question: what is still open in this audit, across every round?
+The synthesis agent already worked that out and wrote it to `findings.json`
+(djinn `CONTRACTS.md` section 12). This command prints it.
+It does no arithmetic of its own and never reads `synthesis.md` prose.
+
+## Step 1: Find the audit
+
+The request names an audit folder, for example
+`audits/2026-09-12-1402-standard`, or names none. Paths are relative to
+the repo root, the folder that holds `audits/`.
+
+- None named: take the most recent folder under `audits/` by name (the names
+  start with a timestamp) that holds a `synthesis.md`, skipping any that
+  does not (an `ideas` run or an aborted review). Say which one you picked.
+- A `round-<n>` folder: use the audit folder above it.
+- A folder with no `synthesis.md`: say
+  `no synthesis.md in <folder>, has the review finished?` and stop.
+
+## Step 2: Find the latest findings.json
+
+Look for `findings.json` in the audit folder and in each `round-<n>/`
+under it. Take the one with the highest round: `round-<n>/` beats the audit
+folder's own, and `round-10` beats `round-9` (compare the numbers, not the
+text).
+
+If there is none, say:
+
+```
+<audit folder> has no findings.json. Either it was reviewed before djinn
+2.2.0, when synthesis started writing one, or its synthesis did not write
+one (review and dispatch say so in their final report). Read <path to the
+latest synthesis.md> for the findings.
+```
+
+and stop. Do not reconstruct the open list from prose. A guess presented as
+status is worse than no status.
+
+If the latest round's folder has a `synthesis.md` but no `findings.json`,
+say so on one line (`round-<n> has no findings.json; showing round <k>`)
+and use the latest round that has one.
+
+## Step 3: Print it
+
+Read the file. Print exactly this shape, and nothing before it:
+
+```
+djinn status: <audit>, round <round>, verdict <verdict>
+open: HIGH <n>, MEDIUM <n>, LOW <n>
+  HIGH    R2 HIGH-1    src/file.js:88       <title>
+  MEDIUM  MEDIUM-3     src/other.js:12      <title>   [not resolved]
+  LOW     LOW-7        docs/x.md            <title>   [regressed]
+resolved this round: MEDIUM-1, LOW-2
+blocking: R2 HIGH-1, MEDIUM-3
+raised in: R2 HIGH-1 <audit>/round-2
+raised in: MEDIUM-3 <audit>
+```
+
+Rules for the listing:
+
+- One row per entry of `open`, sorted HIGH, then MEDIUM, then LOW, then by
+  round, then by the number in the id.
+- The id column shows `R<round> ` before the id for any round above 1.
+  Round 1 ids print bare. `(round, id)` is the identity; two rows may share
+  an id.
+- The location is `file:line`, `file` when `line` is null, and `-` when
+  `file` is null.
+- Add `[not resolved]` or `[regressed]` for those statuses. Plain `open`
+  gets no tag.
+- `resolved this round`: the ids in `prior` with status `RESOLVED`, with
+  the `R<round>` prefix rule. Write `none` if there are none, and leave the
+  line out in round 1.
+- `blocking`: every open HIGH and MEDIUM, with the prefix rule, or `none`.
+  This matches the verdict: a blocking entry means FIX THEN SHIP.
+- After `blocking`, one `raised in:` line per blocking entry: the folder
+  whose synthesis raised it, the audit folder for round 1 and
+  `<audit>/round-<k>` for round `k`. It is where the finding's full text
+  and evidence live. This command states where; it does not prescribe a
+  fix path, because fixing a finding carried from an earlier round is not
+  supported end to end yet.
+- If `open` is empty, print `open: nothing` and `blocking: none`. That is
+  the whole audit fixed and proven, and it is the good news; say it plainly.
+
+## Step 4: Check the file agrees with itself
+
+If the verdict is SHIP but `blocking` is not `none`, or the verdict is FIX
+THEN SHIP and `blocking` is `none`, add one last line:
+
+```
+note: findings.json verdict <verdict> disagrees with its open list; trust synthesis.md and re-run the round's synthesis.
+```
+
+Do not fix the file. This command writes nothing.
+
+## Rules
+
+- Read only. Write nothing, append nothing to `audits/LEDGER.md`
+  (CONTRACTS.md section 6). Read files with `ls`, `cat`, `rg` or `sed -n`
+  and run no command that changes anything. Spawn no agent.
+- Never read agent reports or `synthesis.md` to fill a gap in
+  `findings.json`. Say what is missing instead.
+- Titles print as they are in the file. Never add a word to them.
+
+## Runtime notes
+
+Codex adapter of `plugins/djinn/commands/status.md`. Mapped: `$ARGUMENTS`
+is the folder named in the request; `allowed-tools: Read, Glob` is the
+read-only rule above, stated in words because this skill sets no tool limit;
+`${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` is named, not read, because this skill
+needs nothing from it. Spawns no agent, so it carries no model line.

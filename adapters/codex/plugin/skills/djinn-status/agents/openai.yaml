@@ -1,0 +1,7 @@
+# Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: untested in Codex.
+interface:
+  display_name: "Djinn Status"
+  short_description: "What is still open in a djinn audit"
+  default_prompt: "Use $djinn-status to show what is still open in the latest audit."
+policy:
+  allow_implicit_invocation: false
