@@ -1,6 +1,6 @@
 ---
 name: djinn-review
-description: Run the djinn review relay audit phase on the current repo's change against its base branch, with review agents, synthesis, an audit folder and a ledger line. Stops at the audit; never fixes. Use only when the user asks for a djinn review. This Codex build supports the quick scope and custom agent lists.
+description: Run the djinn review relay audit phase on the current repo's change against its base branch, with review agents, synthesis, an audit folder and a ledger line. Stops at the audit; never fixes. Use only when the user asks for a djinn review. This Codex build supports the quick and standard scopes and custom agent lists.
 ---
 
 <!-- Written by Claude Opus 5.5 for Donald, 2026-10-05. Codex adapter,
@@ -32,11 +32,10 @@ folder two levels above this `SKILL.md` (it holds `CONTRACTS.md`,
 
 ## Scopes this build runs
 
-`quick`, and a custom comma-separated agent list. Any other scope word,
-`standard` included, stops before anything is written with:
-`djinn-review on Codex runs quick or a custom list for now; <scope> is not yet tested here.`
-The default scope in `review.md` is `standard`, so a request that names no
-scope gets that message too, with the hint `try: $djinn-review quick`.
+`quick`, `standard` (the default, as in `review.md`), and a custom
+comma-separated agent list. Any other scope word stops before anything is
+written with:
+`djinn-review on Codex runs quick, standard or a custom list for now; <scope> is not yet tested here.`
 
 ## The mapping
 
@@ -55,6 +54,9 @@ scope gets that message too, with the hint `try: $djinn-review quick`.
 | `model: opus` in `context.md` | `model: <agents model> at <effort>, codex` |
 | `author: Claude Opus (...)` in a header the coordinator writes | `author: Codex (djinn-review)` |
 | `templates/config.yaml` | not shipped in this build; point the owner at `plugins/djinn/templates/config.yaml` in the djinn-relay repo |
+| `/djinn:status`, `/djinn:brief`, `/djinn:dispatch` in Step 10's report | `$djinn-status <AUDIT_DIR>` for status. Brief and dispatch are not on Codex yet: write "brief and dispatch run in Claude Code for now: /djinn:brief <AUDIT_DIR> <id>, then /djinn:dispatch <brief-path>" |
+| a git command | every one, the first `git status` included, carries the CONTRACTS.md section 9 read prefix |
+| a search that may find nothing (`git grep`, `grep`, `rg`, through `xargs` or not) | finding nothing is a normal result, not a failure: run it as `{ <search>; } 2>"$RUN_TMP/err" \|\| true` and treat only a non-empty `$RUN_TMP/err` as an error, so Codex does not show a failed command for an empty result |
 
 The ledger line's detail column also carries
 `runtime=codex model=<model> effort=<effort>`, after `files=<n>`.
@@ -93,8 +95,10 @@ move or delete any other file.
 the step's extra lines>
 ```
 
-Every message also ends with: "Write no em dash and no en dash anywhere in
-your file (CONTRACTS.md section 11); write ranges as 9 to 14."
+Every message also ends with: "Your report's author line is
+`author: Codex <agents model> (<name>)`.
+Write no em dash and no en dash anywhere in your file (CONTRACTS.md
+section 11); write ranges as 9 to 14." with `<agents model>` filled in.
 
 Synthesis gets the same opening, except that its files are
 `<AUDIT_DIR>/synthesis.md` and `<AUDIT_DIR>/findings.json` rather than a
