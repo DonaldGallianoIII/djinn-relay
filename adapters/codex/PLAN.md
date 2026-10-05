@@ -112,6 +112,24 @@ reports, so the terminal stays readable. The Codex side keeps that:
 - A skill's own output is a few lines. Long output sits behind an explicit
   ask, the way `djinn-status --full` does.
 
+## Slice 3 results (2026-10-05)
+
+`plugin/shared/agent-model.md` is the shared step. Facts it rests on, from
+a live Codex 0.160.0 session through the message folder:
+
+- `spawn_agent` takes `model`, `reasoning_effort` and `fork_turns`; the
+  overrides hold only with `fork_turns` `"none"` or a number. A probe child
+  spawned with `gpt-6.1-sol`, `medium`, `"none"` ran exactly that, per its
+  own session log, and received no parent turns.
+- `request_user_input` is Plan mode only, so the skill asks in a plain
+  message and ends its turn, unless the request already names the choice.
+- No per-agent sandbox field: children run with the parent's permissions.
+  A child wrote inside the repo; a write outside it was refused.
+- At most 3 children at once in that session (4 agents including the
+  parent). Waves run in batches.
+- `wait_agent` returns no text; each child's final answer arrives as its
+  own message.
+
 ## Slices, in order
 
 Each slice is built, tested by Donald in Codex, and agreed before the next.
