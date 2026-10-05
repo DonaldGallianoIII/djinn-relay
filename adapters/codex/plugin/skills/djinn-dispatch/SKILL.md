@@ -1,6 +1,6 @@
 ---
 name: djinn-dispatch
-description: Apply djinn fix briefs with fixer agents, one per brief, then review the combined change again. Shows its plan and waits for go before any code changes. Saves a diff and a report per fix; never commits. Usage - $djinn-dispatch [--no-tests] <brief-path> [<brief-path>...]. Codex does not run --prove yet.
+description: Fix djinn findings with fixer agents, then review the combined change again. Takes a selection (all highs, all blocking, all, with recs) that one fixer per 20 findings works through, or brief paths. Shows its plan and waits for go before any code changes. Saves a diff and a report per brief; never commits. Usage - $djinn-dispatch [--no-tests] <audit-folder> <selection> [one each] [--max <n>], or $djinn-dispatch [--no-tests] <brief-path>... Codex does not run --prove yet.
 ---
 
 <!-- Written by Claude Opus 5.5 for Donald, 2026-10-05. Codex adapter of
@@ -20,8 +20,10 @@ The fixing is djinn's own command, unchanged; this file maps it to Codex.
 2. If the request has `--prove`, stop before anything else with:
    `djinn-dispatch on Codex does not run --prove yet; run it without --prove, or use /djinn:dispatch --prove in Claude Code.`
 3. Follow `<plugin root>/commands/dispatch.md` Step 1 to Step 9 as mapped
-   below. Read `CONTRACTS.md` first, in parts. Step 5's plan and its wait
-   for `go` are kept exactly: nothing is spawned and no code changes
+   below. Read `CONTRACTS.md` first, in parts. A selection writes its
+   briefs through `brief.md`'s Selection mode, with the `djinn-brief`
+   skill's mapping, before the plan. Step 5's plan and its wait for `go`
+   are kept exactly: nothing is spawned and no code changes
    before the owner says go.
 4. Step 7's review round follows the `djinn-review` skill's mapping, its
    spawn messages, its quiet terminal and its ledger tag, with the model
@@ -63,7 +65,8 @@ no em dash and no en dash anywhere (CONTRACTS.md section 11).
 
 - Show Step 5's plan in full: it is what the owner says go to.
 - Between batches, one line each: `batch <k>: <brief ids>`, then
-  `batch <k>: landed <ids>` or `batch <k>: blocked <ids>`.
+  `batch <k>: landed <ids>`, `batch <k>: partial <id>, fixed <n> of <m>`
+  or `batch <k>: blocked <ids>`.
 - Never print a Fix Report, a diff, a brief or a review report. The
   owner reads them with `$djinn-view <audit-folder>`.
 - The final message is Step 9's report.

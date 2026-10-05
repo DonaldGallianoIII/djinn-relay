@@ -1,6 +1,6 @@
 {
   "name": "djinn-codex",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Codex adapter for the djinn code review relay. Built from plugins/djinn in the djinn-relay repo, which stays the only edited source. Skills: djinn-setup, djinn-review (quick and standard), djinn-brief, djinn-dispatch, djinn-status, djinn-view.",
   "author": { "name": "Donald Galliano III" },
   "repository": "https://github.com/donaldgallianoiii/djinn-relay",

@@ -1,6 +1,6 @@
 ---
 name: djinn-brief
-description: Write a fix brief for one finding of a djinn audit, the contract a fixer agent works to (the files it may touch, what done means). Writes the brief file only; changes no code. Usage - $djinn-brief <audit-folder> <finding-id>, for example $djinn-brief audits/2026-10-05-1125-quick MEDIUM-1.
+description: Write fix briefs for a djinn audit, the contract a fixer agent works to (the files it may touch, what done means): one finding, or a selection (all highs, all blocking, all, with recs) as group briefs of up to 20 findings, one fixer each. Writes brief files only; changes no code. Usage - $djinn-brief <audit-folder> <finding-id | selection> [one each] [--max <n>].
 ---
 
 <!-- Written by Claude Opus 5.5 for Donald, 2026-10-05. Codex adapter of
@@ -16,7 +16,8 @@ says).
 
 | `brief.md` says | On Codex |
 |---|---|
-| `$ARGUMENTS` | the audit folder and finding id after `$djinn-brief` |
+| `$ARGUMENTS` | the audit folder and the finding id or selection after `$djinn-brief` |
+| `templates/fix-brief-group.md` | `<plugin root>/templates/fix-brief-group.md` |
 | `${CLAUDE_PLUGIN_ROOT}` | `<plugin root>` |
 | `allowed-tools` | read with `cat`, `sed -n` or `rg`; write the brief with `apply_patch` or a shell heredoc; nothing else |
 | `/djinn:dispatch` in the report | `$djinn-dispatch` |

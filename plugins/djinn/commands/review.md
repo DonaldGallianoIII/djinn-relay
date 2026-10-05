@@ -705,9 +705,11 @@ or stopped at NO-CHANGES or NOTHING-TO-REVIEW, write the counts as `?`.
     `<AUDIT_DIR>`." In the `live` scope: "The blind review found nothing
     that blocks a first live run. Read its Before the first live run
     table."
-  - **FIX THEN SHIP**: "Open `<AUDIT_DIR>/synthesis.md`. For each finding
-    you want to fix: `/djinn:brief <AUDIT_DIR> <id>`, then
-    `/djinn:dispatch <brief-path>`."
+  - **FIX THEN SHIP**: "Open `<AUDIT_DIR>/synthesis.md`. To fix:
+    `/djinn:dispatch <AUDIT_DIR> all blocking` (or `all highs`, `all`,
+    `with recs`): one fixer works through them after your go. One finding
+    alone: `/djinn:brief <AUDIT_DIR> <id>`, then `/djinn:dispatch
+    <brief-path>`."
   - **ESCALATE**: "Agents disagreed on a fact the code could not settle.
     Open `<AUDIT_DIR>/synthesis.md`, section Conflicts Resolved."
   - **ideas**: "gap-hunter output at `<AUDIT_DIR>/agents/gap-hunter.md`."

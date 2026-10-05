@@ -61,8 +61,8 @@ standard scope (`$djinn-review`) would catch.
 | `$djinn-view` | opens every audit in your browser |
 | `$djinn-view guide` | the guide: how a review runs, every agent, how to ask for the review you want |
 | `$djinn-setup` | sets djinn up in a repo |
-| `$djinn-brief <audit> <id>` | writes a fix brief for one finding: the files the fix may touch, what done means |
-| `$djinn-dispatch <brief>` | shows a plan, waits for your go, has a fixer agent apply each brief, then reviews again |
+| `$djinn-dispatch <audit> all blocking` | one fixer works through every open HIGH and MEDIUM (up to 20 per fixer, in series) after your go, then djinn reviews again. Also `all highs`, `all`, `with recs`, a list of ids, `one each`, `--max <n>` |
+| `$djinn-brief <audit> <selection or id>` | writes the fix briefs only, for you to read or edit before dispatch |
 
 ## Faster reviews
 

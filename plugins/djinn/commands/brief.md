@@ -1,6 +1,6 @@
 ---
 name: brief
-description: Generate a fix brief skeleton from a synthesis finding. Usage - /djinn:brief <audit-folder> <finding-id> where finding-id is a synthesis id like HIGH-1 or MEDIUM-3. Creates <audit-folder>/fixes/<id>-<slug>.md pre-filled from the finding. The human and the orchestrator fill in WHY and confirm work_set before dispatching.
+description: Generate a fix brief skeleton from a synthesis finding, or one group brief per 20 findings from a selection (all highs, all blocking, all, with recs, with debt, or a list of ids) so one fixer handles many. Usage - /djinn:brief <audit-folder> <finding-id | selection> [one each] [--max <n>] where finding-id is a synthesis id like HIGH-1 or MEDIUM-3. Creates <audit-folder>/fixes/<id>-<slug>.md pre-filled from the finding. The human and the orchestrator fill in WHY and confirm work_set before dispatching.
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -14,7 +14,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` sections 1, 2, 5, 6, and 7 first.
 
 ## Step 1: Parse arguments
 
-`$ARGUMENTS` is `<audit-folder> <finding-id>`.
+`$ARGUMENTS` is `<audit-folder> <finding-id>`, or `<audit-folder>
+<selection>` for a group (see Selection mode below).
 
 - audit-folder: a path like `audits/2026-09-12-1402-standard`, or a round
   folder inside one like `audits/2026-09-12-1402-standard/round-2`.
@@ -22,6 +23,68 @@ Read `${CLAUDE_PLUGIN_ROOT}/CONTRACTS.md` sections 1, 2, 5, 6, and 7 first.
   `HIGH-1`, `MEDIUM-3`, `LOW-2`.
 
 If either is missing or ambiguous, ask the user. Do not guess.
+
+A single finding id goes on to Step 2. Anything else is a selection.
+
+## Selection mode: one fixer for many findings
+
+`MAX_GROUP` is 20: the most findings one group brief, and so one fixer,
+takes. It is a named constant of this command, Donald's number; `--max <n>`
+overrides it for one run.
+
+1. **Read the selection.** It is one or more of these, in any order:
+   - `all highs` or `highs`: every open HIGH.
+   - `all blocking` or `blocking`: every open HIGH and MEDIUM.
+   - `all`: every open HIGH, MEDIUM and LOW.
+   - `with recs` (also `with recs taken`): adds every REC of the latest
+     round.
+   - `with debt`: adds every DEBT of the latest round. DEBT is never
+     included unless named.
+   - a comma list of ids, `HIGH-1, MEDIUM-3, LOW-7`: exactly those.
+   - `one each`: write a single brief per selected finding (Steps 2 to 7,
+     once per finding) instead of group briefs.
+   - `--max <n>`: the group size for this run.
+   Anything else: say which words are understood, and stop.
+2. **Collect the findings.** From the latest round's `findings.json`
+   (CONTRACTS.md section 12): the `open` list for HIGH, MEDIUM and LOW, so
+   a finding still open from an earlier round is included and one already
+   resolved is not; the latest round's `findings` for REC and DEBT. With
+   no `findings.json`, read the latest `synthesis.md` Fix List and say so.
+   Skip any finding a `pending` or `landed` brief under `fixes/` already
+   names, and list the skipped ids. Order: tier (HIGH, MEDIUM, LOW, DEBT,
+   REC), then round, then id number.
+3. **Split.** Cut the ordered list into groups of at most `MAX_GROUP`, in
+   order. 25 findings make two groups, 20 then 5. Each group after the
+   first `depends_on` the one before it, so they run in series, one fixer
+   each.
+4. **Per finding**, do Step 2's citation check and Step 3's work set,
+   exactly as for a single brief. A LINE MISMATCH is marked on that
+   finding's section; `# UNCERTAIN` and `# OUTSIDE AUDIT SCOPE` marks stay
+   on the work set entries.
+5. **Write each group brief** from
+   `${CLAUDE_PLUGIN_ROOT}/templates/fix-brief-group.md` (stop if it cannot
+   be read): `{{GROUP_ID}}` is `group-<k>-of-<n>-<YYYYMMDD-HHMM>`, the
+   `findings` list holds one entry per finding, the work set is the union
+   of the findings' work sets (an entry keeps its marks), and the FINDINGS
+   section has one block per finding, each with the quoted finding, what to
+   change, and at least one testable criterion. `{{PART_OF}}` reads
+   `, part <k> of <n>, after <previous group id>` for every group after
+   the first, else nothing. Write to
+   `<audit-folder>/fixes/group-<k>-of-<n>-<YYYYMMDD-HHMM>.md`, and one ledger
+   line per group as Step 7 shows, with `<n> findings` in place of the id.
+6. **Report**, in place of Step 8:
+   ```
+   Selected <n> findings (<selection>): <ids, compressed as HIGH-1 to HIGH-4>
+   Already briefed, skipped: <ids or none>
+   Plan: <g> fixer(s) in series, <sizes, e.g. 20 then 5>. Override with --max <n>, or one each.
+   Briefs: <paths>
+   Next: fill in WHY if anything was decided, then /djinn:dispatch <paths in order>.
+   ```
+   and the needs-input lists (UNCERTAIN entries, OUTSIDE AUDIT SCOPE files,
+   line mismatches) once for the whole selection.
+
+LOW, DEBT and REC need no per-finding confirmation in selection mode: the
+owner named them.
 
 ## Step 2: Read the config, the context, and the finding
 
@@ -138,7 +201,8 @@ CONTRACTS.md section 6 if missing):
 - Line mismatch, if any.
 - Possible overlap, if any.
 - Next step: "Fill in WHY, verify work_set, then
-  `/djinn:dispatch <brief-path>`."
+  `/djinn:dispatch <brief-path>`. To fix many findings with one fixer,
+  brief a selection instead: `/djinn:brief <audit-folder> all blocking`."
 
 ## Rules
 
