@@ -151,6 +151,21 @@ Found in djinn itself, not fixed: synthesis's status line
 `agent output, not yet deliberated` is not one of the statuses CONTRACTS.md
 section 7 allows.
 
+## Slice 4, runs 2 to 4 (2026-10-05)
+
+- Run 2 (`quick default`, 9 slots): no model question; HIGH-1 is KB-1 now
+  the test index reads `Tier when hit:`, MEDIUM-1 the off-by-one; no
+  dashes. Found: task names are unique per Codex session, so names now
+  carry the run's timestamp.
+- Run 3 (`quick default`, 4 slots, no flag): the heads-up after the model
+  choice and the set it up offer at the end, as built.
+- Run 4 (`default`, so standard, 4 slots): six agents in wave 2 through 3
+  children, each final answer freeing a slot for the next; synthesis after
+  all six. No failed-command lines, exact model in every author line.
+
+Quick and standard are open in the skill. Full, perf, cost, live, ideas
+and map are not yet run on Codex.
+
 ## Slices, in order
 
 Each slice is built, tested by Donald in Codex, and agreed before the next.
