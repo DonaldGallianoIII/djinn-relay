@@ -21,6 +21,7 @@ says).
 | `${CLAUDE_PLUGIN_ROOT}` | `<plugin root>` |
 | `allowed-tools` | read with `cat`, `sed -n` or `rg`; write the brief with `apply_patch` or a shell heredoc; nothing else |
 | `/djinn:dispatch` in the report | `$djinn-dispatch` |
+| appending the line to `audits/LEDGER.md` | a shell append, never `apply_patch`: write the line to a file in `$RUN_TMP` and run `cat "$RUN_TMP/ledger-line" >> audits/LEDGER.md` (create the file with its header row first if it is missing). `apply_patch` anchors on nearby text and can put the line under the header instead of at the end, which a live Codex brief did on 2026-10-05 |
 | `author: Claude ...` in the brief's header | `author: Codex (djinn-brief)` |
 
 Show only Step 8's report. Never print the finding's full text, the

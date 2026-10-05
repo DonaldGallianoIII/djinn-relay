@@ -73,6 +73,8 @@ scope word stops before anything is written with:
 | `author: Claude Opus (...)` in a header the coordinator writes | `author: Codex (djinn-review)` |
 | `templates/config.yaml` | `<plugin root>/templates/config.yaml`, the generated copy; `setup-project.mjs` drafts from it |
 | `/djinn:status`, `/djinn:view`, `/djinn:brief`, `/djinn:dispatch` in Step 10's report | `$djinn-status <AUDIT_DIR>`, `$djinn-view <AUDIT_DIR>` (and `$djinn-view guide`), `$djinn-brief <AUDIT_DIR> <id>`, then `$djinn-dispatch <brief-path>` |
+| appending the line to `audits/LEDGER.md` | a shell append, never `apply_patch`: write the line to a file in `$RUN_TMP` and run `cat "$RUN_TMP/ledger-line" >> audits/LEDGER.md` (create the file with its header row first if it is missing). `apply_patch` anchors on nearby text and can put the line under the header instead of at the end, which a live Codex brief did on 2026-10-05 |
+| checking whether a file or folder exists | `test -e <path> && echo "<path>: yes" \|\| echo "<path>: no"`, never `ls` or `cat` on a path that may be missing, so Codex shows no failed command for an expected absence |
 | a git command | every one, the first `git status` included, carries the CONTRACTS.md section 9 read prefix |
 | a search that may find nothing (`git grep`, `grep`, `rg`, through `xargs` or not) | finding nothing is a normal result, not a failure: run it as `{ <search>; } 2>"$RUN_TMP/err" \|\| true` and treat only a non-empty `$RUN_TMP/err` as an error, so Codex does not show a failed command for an empty result |
 
