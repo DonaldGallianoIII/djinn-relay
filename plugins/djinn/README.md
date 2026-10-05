@@ -28,8 +28,8 @@ Or, from a local checkout while developing the plugin itself:
 ```
 
 Restart Claude Code after installing. The commands `/djinn:review`,
-`/djinn:brief`, `/djinn:dispatch`, `/djinn:status` and `/djinn:learn` now
-exist in every project.
+`/djinn:brief`, `/djinn:dispatch`, `/djinn:status`, `/djinn:view` and
+`/djinn:learn` now exist in every project.
 
 ## Set up a project
 
@@ -361,10 +361,21 @@ it and whether a human has reviewed it yet. Trust the `status` line.
 ```
 CONTRACTS.md        the interfaces every agent and command honor
 relay.md            why the flow is shaped this way
-commands/           review, brief, dispatch, status, learn
+commands/           review, brief, dispatch, status, view, learn
+scripts/            view.mjs, the audit viewer /djinn:view runs (Node, no packages)
 agents/             one prompt per reviewer, plus synthesis, fixer, consolidator, and the seven learn- agents
 templates/          fix-brief.md, config.yaml
 ```
+
+## Reading audits in a browser
+
+`/djinn:view` builds a small site from `audits/` and opens it: an index of
+every audit from the ledger, and a page per audit with its verdict, a
+findings table you can filter by tier and search, each round's synthesis,
+every agent report, and the run's own files. It is built fresh each time
+into a cache folder outside the repo, so nothing rendered is ever
+committed or stale. `/djinn:view <audit-folder>` opens one audit. Review and
+status end by naming it.
 
 ## Other runtimes
 

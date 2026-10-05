@@ -54,7 +54,7 @@ written with:
 | `model: opus` in `context.md` | `model: <agents model> at <effort>, codex` |
 | `author: Claude Opus (...)` in a header the coordinator writes | `author: Codex (djinn-review)` |
 | `templates/config.yaml` | not shipped in this build; point the owner at `plugins/djinn/templates/config.yaml` in the djinn-relay repo |
-| `/djinn:status`, `/djinn:brief`, `/djinn:dispatch` in Step 10's report | `$djinn-status <AUDIT_DIR>` for status. Brief and dispatch are not on Codex yet: write "brief and dispatch run in Claude Code for now: /djinn:brief <AUDIT_DIR> <id>, then /djinn:dispatch <brief-path>" |
+| `/djinn:status`, `/djinn:view`, `/djinn:brief`, `/djinn:dispatch` in Step 10's report | `$djinn-status <AUDIT_DIR>` for status, `$djinn-view <AUDIT_DIR>` for the browser. Brief and dispatch are not on Codex yet: write "brief and dispatch run in Claude Code for now: /djinn:brief <AUDIT_DIR> <id>, then /djinn:dispatch <brief-path>" |
 | a git command | every one, the first `git status` included, carries the CONTRACTS.md section 9 read prefix |
 | a search that may find nothing (`git grep`, `grep`, `rg`, through `xargs` or not) | finding nothing is a normal result, not a failure: run it as `{ <search>; } 2>"$RUN_TMP/err" \|\| true` and treat only a non-empty `$RUN_TMP/err` as an error, so Codex does not show a failed command for an empty result |
 

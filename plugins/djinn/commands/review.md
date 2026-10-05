@@ -674,6 +674,7 @@ or stopped at NO-CHANGES or NOTHING-TO-REVIEW, write the counts as `?`.
   move it. The agent still wrote exactly one file; the copy is yours.
   `review_copy` is opt in and absent by default.
 - For the open list at any later point: `/djinn:status <AUDIT_DIR>`.
+- To read the reports in a browser: `/djinn:view <AUDIT_DIR>`.
 - Next step:
   - **SHIP**: "Nothing blocks a merge to <base_branch>. Audit archived at
     `<AUDIT_DIR>`." In the `live` scope: "The blind review found nothing
