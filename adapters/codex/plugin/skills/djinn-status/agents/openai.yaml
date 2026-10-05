@@ -4,4 +4,4 @@ interface:
   short_description: "What is still open in a djinn audit"
   default_prompt: "Use $djinn-status to show what is still open in the latest audit."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

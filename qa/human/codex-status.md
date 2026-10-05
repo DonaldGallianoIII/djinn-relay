@@ -2,7 +2,7 @@
 title: QA, Codex adapter slice 1, djinn-status
 author: Claude Opus 5.5, for Donald
 date: 2026-10-05
-status: steps 2 to 7 run by Claude on 2026-10-05 with `codex exec` in a throwaway CODEX_HOME, all passed. Not yet run by a person in the interactive TUI.
+status: steps 2 to 4 run by Claude in a throwaway CODEX_HOME. Step 5's command confirmed by a live Codex session (one `node` call, output matches). Not yet run start to finish by a person.
 ---
 
 # Codex adapter slice 1: djinn-status
@@ -33,7 +33,8 @@ marketplace and one plugin. Step 8 removes both.
 
 5. Still in the repo, start `codex` and type
    `Use $djinn-status with no folder named.`
-   You should see, as the first line:
+   Codex should run one command, `node .../scripts/status.mjs`, and read
+   no JSON itself. You should see, as the first line:
    `djinn status: audits/2026-09-29-1654-custom, round 3, verdict FIX THEN SHIP`
    then `open: HIGH 0, MEDIUM 10, LOW 25`, then 35 rows: ten MEDIUM rows
    `R3 MEDIUM-1` to `R3 MEDIUM-10`, then `R2 LOW-6` ending in

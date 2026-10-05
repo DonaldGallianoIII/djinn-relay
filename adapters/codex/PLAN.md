@@ -29,7 +29,7 @@ Read from the installed binary and the plugins Codex ships with, on
 | Spawn an agent | Agent tool, `subagent_type`, `model` | `spawn_agent`, with `task_name`, `model`, a reasoning effort, `fork_turns` |
 | Wait for agents | parallel calls in one message | `wait_agent` |
 | Ask the owner | the conversation | `request_user_input` |
-| Plugin root | `${CLAUDE_PLUGIN_ROOT}` | unknown, see open question 2 |
+| Plugin root | `${CLAUDE_PLUGIN_ROOT}` | the skill's own folder, resolved by the model from its catalog path |
 
 Codex also lists `.claude-plugin/plugin.json` and
 `.claude-plugin/marketplace.json` among the files it recognizes. It may try to
@@ -124,8 +124,17 @@ programmatic test are added where there is a deterministic loop to replay.
    skill reads must sit inside `adapters/codex/plugin/`, which is why the
    generated agents go in `plugin/agents/`. Running `codex plugin add` again
    refreshes the cache without a version bump.
-3. Still open: whether a skill can name a file in its own plugin by a path
-   Codex resolves for it. Slice 2 tests it with the first generated agent.
+3. A skill can reach files beside it. Codex lists the skill with a short
+   alias path (`r1/djinn-codex/0.1.0/skills/djinn-status/SKILL.md`, with
+   `r1` mapped to the marketplace cache root), and the model resolves
+   `scripts/status.mjs` against that folder and runs it from the cache.
+   Confirmed by a live Codex session through the shared message folder.
+4. A skill with `allow_implicit_invocation: false` in `agents/openai.yaml`
+   is left out of the model's skill catalog entirely; Codex's own
+   `review-agent` is missing the same way. Typing `$djinn-status` then
+   finds nothing, and the model goes searching the disk. Skills here use
+   `true`. Revisit for skills that spawn agents or write files, where an
+   unasked run costs more.
 
 ## Found in passing, in djinn itself, not fixed
 
