@@ -90,7 +90,13 @@ Codex audit can never pass for an Opus one.
 
 Every `spawn_agent` call in the run passes all of:
 
-- `task_name`: the agent's name with `-` turned into `_`
+- `task_name`: the agent's name with `-` turned into `_`, then `_` and the
+  run's timestamp (`bugs_reviewer_202610051001`). Task names are unique
+  across the whole Codex session, not per run: a second review in the same
+  session that reused `known_bugchecker` was refused with `agent path
+  /root/known_bugchecker already exists`. If a name is still refused that
+  way, add `_2`, `_3` and so on. Never reuse an earlier child with a
+  follow-up: it still holds its earlier review.
 - `model`: the chosen model
 - `reasoning_effort`: the chosen effort
 - `fork_turns`: `"none"`

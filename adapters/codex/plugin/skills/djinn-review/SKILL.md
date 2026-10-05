@@ -49,7 +49,7 @@ scope gets that message too, with the hint `try: $djinn-review quick`.
 | `allowed-tools` and the Rules' Bash list | shell commands from that list, plus `cat`, `sed -n` and `rg` to read; write files with `apply_patch` or a shell heredoc. Handling a git list in a script instead of a list file is fine, as long as no path or config value is typed into a command line (CONTRACTS.md section 9). No build, no test, no command that changes git state |
 | the Agent tool with `subagent_type: "<name>"` and `model: "opus"` | `spawn_agent` per `shared/agent-model.md` Step D, with the message built as below |
 | several Agent calls in one message | a rolling window up to the concurrency cap (`shared/agent-model.md`, Concurrency): each final answer frees a slot for the next agent of the wave; the next wave starts only when every agent of this one has answered |
-| an agent "returns" | its `FINAL_ANSWER` message arrives on its own; `wait_agent` only yields until then and never carries it. After spawning a batch, call `wait_agent` with `timeout_ms` 60000 and call it again only while a final answer is still missing; do not narrate the waits |
+| an agent "returns" | its `FINAL_ANSWER` message arrives on its own; `wait_agent` only yields until then and never carries it. While final answers are missing, call `wait_agent` with `timeout_ms` 60000. Waits get no commentary of their own; the only progress line is the one under Keep the terminal quiet |
 | the waves | wave 1 is Step 5 (known-bugchecker), wave 2 is Step 6, wave 3 and up are Step 7's executing agents one per wave, and the last wave is synthesis. `usage.md` uses these numbers |
 | every agent's usage block | Codex gives none: `?` in every `usage.md` cell |
 | `model: opus` in `context.md` | `model: <agents model> at <effort>, codex` |
@@ -98,10 +98,13 @@ your file (CONTRACTS.md section 11); write ranges as 9 to 14."
 
 Synthesis gets the same opening, except that its files are
 `<AUDIT_DIR>/synthesis.md` and `<AUDIT_DIR>/findings.json` rather than a
-report under `agents/`, with the status its own agent file gives.
+report under `agents/`, with the status its own agent file gives. In its
+prompt, the fence block's last paragraph ("Start your report with ... Reply
+with only the header line and your Counts.") is replaced by that.
 
-The agent's final answer is the header line and its Counts, as the fence
-block asks. Nothing longer comes back.
+A reviewer's final answer is its header line and its Counts, as the fence
+block asks. Synthesis's final answer is the one line set under Reading
+results without reading reports. Nothing longer comes back.
 
 ## Keep the terminal quiet
 
@@ -116,8 +119,10 @@ block asks. Nothing longer comes back.
 ## Rules
 
 - Never fix, never spawn a fixer, never run proof-runner.
-- Agents write only their report under `AUDIT_DIR/agents/`. The
-  coordinator writes the audit folder's own files and the ledger line.
+- Each reviewer writes only its report under `AUDIT_DIR/agents/`.
+  Synthesis writes only `AUDIT_DIR/synthesis.md` and
+  `AUDIT_DIR/findings.json`. The coordinator writes the audit folder's own
+  files and the ledger line.
 - On Codex, read-only reviewers are read-only by instruction, not by
   sandbox; `runtime.md` says so.
 - Never run the Azure CLI (`az`) or anything that touches Azure.
