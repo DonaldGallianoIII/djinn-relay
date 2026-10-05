@@ -13,7 +13,9 @@ with node, not yet run from a Codex session, not reviewed. -->
 
 ## Step 1: Check the tools
 
-Run `codex --version` and `node --version`. djinn on Codex was built and
+Run `codex --version 2>/dev/null` and `node --version` (Codex prints a
+harmless warning about its own folder when the sandbox is read-only;
+`2>/dev/null` keeps it off the screen). djinn on Codex was built and
 tested on Codex 0.160.0. On an older Codex, say
 `djinn was tested on Codex 0.160.0; this is <version>, so some steps may not work. Update with: codex update`
 and carry on. Without Node, say `djinn needs Node; install it, then run $djinn-setup again` and stop.

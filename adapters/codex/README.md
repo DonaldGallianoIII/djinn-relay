@@ -2,7 +2,7 @@
 title: djinn for Codex, install and first run
 author: Claude Opus 5.5, for Donald
 date: 2026-10-05
-status: install from GitHub tested in a throwaway Codex home; review runs tested live on a scratch repo; the setup script tested with node. The first-run self-setup inside a Codex session, and a second machine, not yet tested.
+status: install from GitHub tested in a throwaway Codex home; review runs and the first-run self-setup tested live on scratch repos. The one-question first run (config and model answered by a single go) is not yet run live, and no second machine yet.
 ---
 
 # djinn for Codex
@@ -37,10 +37,13 @@ $djinn-review quick
 
 The first time, djinn sets itself up: it reads your repo, shows a draft of
 `.djinn/config.yaml` (base branch, build and test commands, conventions
-files, dependency files) and asks you to reply `go`. Then it asks which
-model the review agents use (reply `go` for GPT-6.1-Sol at medium effort)
-and runs. Commit `.djinn/` afterward. To set up without reviewing, use
+files, dependency files) and asks one question. Reply `go` to write it and
+run the review agents on GPT-6.1-Sol at medium effort, or say what to
+change. Commit `.djinn/` afterward. To set up without reviewing, use
 `$djinn-setup`.
+
+`quick` is a fast first pass with three reviewers. It can miss things the
+standard scope (`$djinn-review`) would catch.
 
 ## Commands
 

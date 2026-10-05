@@ -33,9 +33,12 @@ would carry it, it reads `key: withheld, not an env var name`.
 If the file is missing: run the steps of `/djinn:setup`
 (`${CLAUDE_PLUGIN_ROOT}/commands/setup.md`) in place, drafting the config
 and asking the owner once. When the owner says go and the file is written,
-read it and carry on from here with the review they asked for. When they
-decline, append the ledger line (Step 9) with outcome
-`ABORTED step 1: no config` and stop.
+read it and carry on from here with the review they asked for. The new
+config is not part of the change under review: in Step 3 item 3, drop
+`.djinn/config.yaml` from the untracked list before the stops, and write
+`setup: .djinn/config.yaml written by /djinn:setup in this run, left out
+of the fence` in context.md. When they decline, append the ledger line
+(Step 9) with outcome `ABORTED step 1: no config` and stop.
 
 If the file exists but `base_branch` is missing: append the ledger line
 with outcome `ABORTED step 1: no config`, tell the user to add

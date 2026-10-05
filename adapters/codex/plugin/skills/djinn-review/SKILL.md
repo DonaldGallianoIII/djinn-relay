@@ -17,11 +17,18 @@ folder two levels above this `SKILL.md` (it holds `CONTRACTS.md`,
 
 ## Order of work
 
-0. If `.djinn/config.yaml` does not exist in the repo root, set djinn up
-   first: follow the `djinn-setup` skill (`skills/djinn-setup/SKILL.md`)
-   Steps 1 and 2. When the owner says go and the file is written, carry on
-   here with the review they asked for. When they decline, `review.md`
-   Step 1's no-config stop applies.
+0. Check for the config quietly, with
+   `test -f .djinn/config.yaml && echo config: yes || echo config: no`.
+   If it is missing, set djinn up first: follow the `djinn-setup` skill
+   (`skills/djinn-setup/SKILL.md`) Steps 1 and 2, with one change, so the
+   owner answers once and not twice: unless the request already named the
+   model or said `default`, setup's question becomes
+   `Reply go to write .djinn/config.yaml as drafted and run the review agents on gpt-6.1-sol at medium effort, or tell me what to change.`
+   A `go` to it settles both the config and `shared/agent-model.md`
+   Step A (chosen by: reply). When the file is written, carry on here with
+   the review they asked for, and `review.md` Step 1's self-setup rules
+   apply (the new config stays out of the fence). When they decline,
+   `review.md` Step 1's no-config stop applies.
 1. Follow `shared/agent-model.md` Steps A and B: take or ask for the
    agents' model and effort, and check them. Nothing else happens until
    that is settled. Then give its concurrency heads-up if the session's
