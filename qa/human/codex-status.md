@@ -31,16 +31,18 @@ marketplace and one plugin. Step 8 removes both.
 4. Run `codex plugin add djinn-codex@djinn-relay`, then `codex plugin list`
    again. The row should now read `installed, enabled`, version `0.1.0`.
 
-5. Still in the repo, start `codex` and type
-   `Use $djinn-status with no folder named.`
+5. Still in the repo, start `codex` and type `$djinn-status`.
    Codex should run one command, `node .../scripts/status.mjs`, and read
-   no JSON itself. You should see, as the first line:
-   `djinn status: audits/2026-09-29-1654-custom, round 3, verdict FIX THEN SHIP`
-   then `open: HIGH 0, MEDIUM 10, LOW 25`, then 35 rows: ten MEDIUM rows
-   `R3 MEDIUM-1` to `R3 MEDIUM-10`, then `R2 LOW-6` ending in
-   `[not resolved]`, then `R3 LOW-1` to `R3 LOW-24`. Then a
-   `resolved this round` line, a `blocking` line listing the ten MEDIUMs,
-   and ten `raised in:` lines.
+   no JSON itself. You should see four lines:
+   `djinn status: audits/2026-09-29-1654-custom, round 3, verdict FIX THEN SHIP`,
+   `open: HIGH 0, MEDIUM 10, LOW 25`, a `blocking:` line listing
+   `R3 MEDIUM-1` to `R3 MEDIUM-10`, and a `full list:` line.
+
+5b. Type `$djinn-status full`. Now the command carries `--full` and you
+   get 35 rows: ten MEDIUM rows `R3 MEDIUM-1` to `R3 MEDIUM-10`, then
+   `R2 LOW-6` ending in `[not resolved]`, then `R3 LOW-1` to `R3 LOW-24`,
+   then the `resolved this round`, `blocking` and ten `raised in:` lines.
+   This one is long on purpose.
 
 6. Type `Use $djinn-status on audits/2026-09-25-1902-custom`.
    That folder has a synthesis but no findings.json, so you should see the

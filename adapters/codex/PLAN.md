@@ -87,6 +87,19 @@ audit six months from now.
 Whether the coordinating session can change its own model is not in scope.
 It runs on whatever Codex session started it.
 
+## Keep the main terminal quiet
+
+Donald, 2026-10-05: on Claude, agents launch as one line each and djinn
+comes back with one line of counts. The coordinator never reads the agent
+reports, so the terminal stays readable. The Codex side keeps that:
+
+- Every agent writes its report to `<AUDIT_DIR>/agents/<name>.md` and
+  ends with a one-line final answer: its name, the report path, and its
+  counts. The coordinating session reads that line, never the report.
+- Only synthesis reads the reports.
+- A skill's own output is a few lines. Long output sits behind an explicit
+  ask, the way `djinn-status --full` does.
+
 ## Slices, in order
 
 Each slice is built, tested by Donald in Codex, and agreed before the next.

@@ -1,6 +1,7 @@
 /**
- * Tests for the Codex djinn-status script against the rules in
- * plugins/djinn/commands/status.md, using throwaway audit folders.
+ * Tests for the Codex djinn-status script: --full against the rules in
+ * plugins/djinn/commands/status.md, and the short default form, using
+ * throwaway audit folders.
  *
  * Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: passing, not
  * reviewed.
@@ -32,7 +33,7 @@ const finding = (id, round, tier, extra = {}) => ({
 });
 
 /** Build a repo with the given audit folders, run the script, clean up. */
-function run(audits, arg) {
+function run(audits, ...args) {
   const root = mkdtempSync(join(tmpdir(), 'djinn-status-'));
   try {
     for (const [path, files] of Object.entries(audits)) {
@@ -42,8 +43,7 @@ function run(audits, arg) {
       }
     }
     mkdirSync(join(root, 'audits'), { recursive: true });
-    const args = arg === undefined ? [SCRIPT] : [SCRIPT, arg];
-    return execFileSync('node', args, { cwd: root, encoding: 'utf8' });
+    return execFileSync('node', [SCRIPT, ...args], { cwd: root, encoding: 'utf8' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -112,7 +112,7 @@ test('rows sort by tier, then round, then id number, with R prefixes and tags', 
     finding('HIGH-1', 2, 'HIGH'),
     finding('MEDIUM-3', 1, 'MEDIUM', { status: 'not-resolved' }),
   ];
-  const out = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-2': { 'synthesis.md': '', 'findings.json': json(2, 'FIX THEN SHIP', open) } }, 'audits/a');
+  const out = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-2': { 'synthesis.md': '', 'findings.json': json(2, 'FIX THEN SHIP', open) } }, '--full', 'audits/a');
   const rows = out.split('\n').filter((l) => /^ {2}(HIGH|MEDIUM|LOW) /.test(l));
   assert.deepEqual(rows.map((r) => r.trim().split(/\s{2,}/)[1]), ['R2 HIGH-1', 'MEDIUM-3', 'R2 MEDIUM-2', 'R2 MEDIUM-10', 'LOW-2']);
   assert.match(rows[1], /\[not resolved\]$/);
@@ -130,22 +130,22 @@ test('location is file:line, file, or a dash', () => {
     finding('LOW-2', 1, 'LOW', { line: null }),
     finding('LOW-3', 1, 'LOW', { file: null, line: null }),
   ];
-  const out = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', open) } }, 'audits/a');
+  const out = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', open) } }, '--full', 'audits/a');
   const locs = out.split('\n').filter((l) => /^ {2}LOW/.test(l)).map((r) => r.trim().split(/\s{2,}/)[2]);
   assert.deepEqual(locs, ['src/a.js:10', 'src/a.js', '-']);
 });
 
 test('round 1 leaves out the resolved line; later rounds list RESOLVED only', () => {
-  const r1 = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', []) } }, 'audits/a');
+  const r1 = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', []) } }, '--full', 'audits/a');
   assert.doesNotMatch(r1, /resolved this round/);
   const prior = [
     { id: 'HIGH-1', round: 1, status: 'RESOLVED' },
     { id: 'LOW-1', round: 2, status: 'RESOLVED' },
     { id: 'LOW-2', round: 1, status: 'NOT RESOLVED' },
   ];
-  const r3 = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-3': { 'synthesis.md': '', 'findings.json': json(3, 'SHIP', [], prior) } }, 'audits/a');
+  const r3 = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-3': { 'synthesis.md': '', 'findings.json': json(3, 'SHIP', [], prior) } }, '--full', 'audits/a');
   assert.match(r3, /^resolved this round: HIGH-1, R2 LOW-1$/m);
-  const none = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-2': { 'synthesis.md': '', 'findings.json': json(2, 'SHIP', [], [prior[2]]) } }, 'audits/a');
+  const none = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-2': { 'synthesis.md': '', 'findings.json': json(2, 'SHIP', [], [prior[2]]) } }, '--full', 'audits/a');
   assert.match(none, /^resolved this round: none$/m);
 });
 
@@ -165,6 +165,30 @@ test('verdict disagreeing with the open list adds the note, both ways', () => {
 
 test('titles print exactly as stored', () => {
   const title = 'Keeps `code`, colons: and (parens) as is';
-  const out = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', [finding('LOW-1', 1, 'LOW', { title })]) } }, 'audits/a');
+  const out = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', [finding('LOW-1', 1, 'LOW', { title })]) } }, '--full', 'audits/a');
   assert.ok(out.includes(title));
+});
+
+test('default is the short form: header, counts, blocking, where the list is', () => {
+  const open = [finding('HIGH-1', 2, 'HIGH'), finding('MEDIUM-1', 1, 'MEDIUM'), finding('LOW-1', 1, 'LOW')];
+  const prior = [{ id: 'LOW-9', round: 1, status: 'RESOLVED' }];
+  const out = run({ 'audits/a': { 'synthesis.md': '' }, 'audits/a/round-2': { 'synthesis.md': '', 'findings.json': json(2, 'FIX THEN SHIP', open, prior) } }, 'audits/a');
+  assert.deepEqual(out.trim().split('\n'), [
+    'djinn status: audits/a, round 2, verdict FIX THEN SHIP',
+    'open: HIGH 1, MEDIUM 1, LOW 1',
+    'blocking: R2 HIGH-1, MEDIUM-1',
+    'full list: add --full, or read audits/a/round-2/synthesis.md',
+  ]);
+});
+
+test('short form keeps the verdict note', () => {
+  const out = run({ 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', [finding('HIGH-1', 1, 'HIGH')]) } }, 'audits/a');
+  assert.match(out, /^note: findings\.json verdict SHIP disagrees/m);
+});
+
+test('--full may come before or after the folder; unknown flags are a usage error', () => {
+  const audits = { 'audits/a': { 'synthesis.md': '', 'findings.json': json(1, 'SHIP', [finding('LOW-1', 1, 'LOW')]) } };
+  assert.match(run(audits, 'audits/a', '--full'), /^ {2}LOW/m);
+  assert.match(run(audits, '--full', 'audits/a'), /^ {2}LOW/m);
+  assert.throws(() => run(audits, '--brief'), /usage: node status\.mjs/);
 });

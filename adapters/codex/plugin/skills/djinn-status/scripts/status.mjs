@@ -2,13 +2,16 @@
  * Print what is still open in a djinn audit, from its latest findings.json.
  * The Codex djinn-status skill runs this instead of having the model read
  * the JSON, so the session sees one command and the finished report, not
- * 40 KB of data. The output rules are plugins/djinn/commands/status.md
- * Steps 1 to 4, unchanged; that file is the spec and wins any disagreement.
+ * 40 KB of data. With --full the output follows plugins/djinn/commands/
+ * status.md Steps 1 to 4, unchanged; that file is the spec. Without it the
+ * script prints the short form: header, counts, blocking ids, and where the
+ * full list is. Donald's call, 2026-10-05: the full table is a wall of text
+ * in a terminal, and djinn's review already ends on one line of counts.
  *
  * Written by Claude Opus 5.5 for Donald, 2026-10-05. Status: tested against
  * every audit in this repo, not reviewed.
  *
- * Usage: node status.mjs [<audit-folder>]   (run from the repo root)
+ * Usage: node status.mjs [--full] [<audit-folder>]   (run from the repo root)
  * Exit 0 for every report or explained stop, 2 for a usage error.
  *
  * @interacts  reads audits/<folder>/synthesis.md (existence only) and
@@ -80,7 +83,7 @@ function pad(text, width) {
 }
 
 /** Steps 3 and 4: the report lines for one findings.json. */
-function report(audit, f) {
+function report(audit, f, full, latestSynthesis) {
   const out = [`djinn status: ${audit}, round ${f.round}, verdict ${f.verdict}`];
   const open = [...f.open].sort(
     (a, b) =>
@@ -88,6 +91,9 @@ function report(audit, f) {
   );
   if (open.length === 0) {
     out.push('open: nothing');
+  } else if (!full) {
+    const count = (t) => open.filter((e) => e.tier === t).length;
+    out.push(`open: HIGH ${count('HIGH')}, MEDIUM ${count('MEDIUM')}, LOW ${count('LOW')}`);
   } else {
     const count = (t) => open.filter((e) => e.tier === t).length;
     out.push(`open: HIGH ${count('HIGH')}, MEDIUM ${count('MEDIUM')}, LOW ${count('LOW')}`);
@@ -98,16 +104,17 @@ function report(audit, f) {
       );
     }
   }
-  if (f.round > 1) {
+  if (full && f.round > 1) {
     const resolved = (f.prior || []).filter((p) => p.status === 'RESOLVED').map(displayId);
     out.push(`resolved this round: ${resolved.length ? resolved.join(', ') : 'none'}`);
   }
   const blocking = open.filter((e) => CONFIG.blockingTiers.has(e.tier));
   out.push(`blocking: ${blocking.length ? blocking.map(displayId).join(', ') : 'none'}`);
-  for (const e of blocking) {
+  for (const e of full ? blocking : []) {
     out.push(`raised in: ${displayId(e)} ${e.round > 1 ? `${audit}/round-${e.round}` : audit}`);
   }
   if (open.length === 0) out.push('Nothing is open: every finding in this audit is fixed and proven.');
+  else if (!full) out.push(`full list: add --full, or read ${latestSynthesis}`);
   const shipWithBlocking = f.verdict === 'SHIP' && blocking.length > 0;
   const fixWithoutBlocking = f.verdict === 'FIX THEN SHIP' && blocking.length === 0;
   if (shipWithBlocking || fixWithoutBlocking) {
@@ -119,11 +126,13 @@ function report(audit, f) {
 }
 
 function main(argv) {
-  if (argv.length > 1) {
-    console.error('usage: node status.mjs [<audit-folder>]');
+  const full = argv.includes('--full');
+  const rest = argv.filter((a) => a !== '--full');
+  if (rest.length > 1 || rest.some((a) => a.startsWith('--'))) {
+    console.error('usage: node status.mjs [--full] [<audit-folder>]');
     return 2;
   }
-  const found = findAudit(argv[0]);
+  const found = findAudit(rest[0]);
   if (found.stop) {
     console.log(found.stop);
     return 0;
@@ -153,7 +162,8 @@ function main(argv) {
     console.log(`${join(withJson[0].dir, 'findings.json')} is not valid JSON (${err.message}); read the round's synthesis.md`);
     return 0;
   }
-  console.log([...lines, ...report(audit, f)].join('\n'));
+  const latestSynthesis = join(withJson[0].dir, 'synthesis.md');
+  console.log([...lines, ...report(audit, f, full, latestSynthesis)].join('\n'));
   return 0;
 }
 
