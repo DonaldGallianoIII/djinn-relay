@@ -3,10 +3,10 @@
 # commands, agents and CONTRACTS.md for contradictions, broken references,
 # and instructions an agent would misread.
 
-# This repo has no main yet, and this is the branch the work happens on, so a
-# plain /djinn:review would compare the branch with itself and see only
-# uncommitted work. Always pass --base <commit before the change>.
-base_branch: Claude-Development-djinn-relay
+# main is the stable branch; work happens on Claude-Development-djinn-relay
+# and the owner merges it into main. A plain /djinn:review compares the work
+# branch with main.
+base_branch: main
 
 # The voice checker over the plugin's prompts (CONTRACTS.md section 11).
 # check_voice.py takes file paths, not a folder, so git ls-files feeds it every
